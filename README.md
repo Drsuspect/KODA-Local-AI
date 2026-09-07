@@ -197,3 +197,14 @@ Project website: https://kodaai.com.tr
 Designed and developed by Murat GUNEY LARRANAGA.
 
 Copyright 2026 KODA AI
+
+## License and Usage
+
+Copyright 2026 KODA AI / Murat GUNEY LARRANAGA.
+
+This repository is published for research, evaluation, and collaboration purposes.
+
+No license is currently granted for commercial use, redistribution, sublicensing, or incorporation into commercial products without prior written permission.
+
+For collaboration or commercial licensing inquiries:
+https://kodaai.com.tr

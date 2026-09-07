@@ -124,19 +124,22 @@ See SECURITY.md for additional information.
 KODA-Local-AI/
 |-- audit/
 |-- common/
-|-- docs/
+|-- data/
+|   `-- documents/        # local runtime documents, ignored by Git
 |-- examples/
+|   `-- documents/        # safe public sample documents
 |-- experiments/
-|   -- legacy/
+|   `-- legacy/
 |-- llm_core/
 |-- rag/
 |-- security/
+|-- .env.example
 |-- api_server.py
 |-- main.py
 |-- requirements.txt
 |-- ARCHITECTURE.md
 |-- SECURITY.md
--- README.md
+`-- README.md
 
 ## Research Roadmap
 

@@ -61,3 +61,13 @@ data/
 # Backup files
 *.bak
 
+
+# Keep public environment template
+!.env.example
+
+# Audio / private voice data
+*.wav
+*.mp3
+recordings/
+koda_tts_dataset/
+generated_audio/

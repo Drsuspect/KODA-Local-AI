@@ -1,0 +1,6 @@
+﻿KODA örnek bilgi belgesi
+
+Türkiye'nin başkenti Ankara'dır.
+Dünya'nın doğal uydusu Ay'dır.
+Su, deniz seviyesinde yaklaşık 100 santigrat derecede kaynar.
+KODA, erişilebilir ve ses odaklı eğitim sistemleri üzerine geliştirilen bir Ar-Ge platformudur.

@@ -54,3 +54,15 @@ temp/
 
 # Local test docs if desired
 docs/koda_test.txt
+
+# Local runtime data
+data/
+
+# Backup files
+*.bak
+
+# Local runtime data
+data/
+
+# Backup files
+*.bak

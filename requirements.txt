@@ -1,0 +1,14 @@
+﻿ollama
+python-docx
+numpy
+torch
+transformers
+accelerate
+pymupdf
+sentence-transformers
+chromadb
+fastapi
+uvicorn
+pydantic
+python-multipart
+

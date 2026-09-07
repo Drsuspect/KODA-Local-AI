@@ -1,0 +1,56 @@
+﻿# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Local databases / vector stores
+chroma_db/
+*.sqlite
+*.sqlite3
+*.db
+
+# Hugging Face / model caches
+.cache/
+huggingface/
+models/
+model_cache/
+
+# Local AI runtime artifacts
+*.gguf
+*.bin
+*.safetensors
+*.onnx
+
+# Logs
+*.log
+logs/
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Environment / secrets
+.env
+.env.*
+*.key
+*.pem
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Python test/cache
+.pytest_cache/
+.mypy_cache/
+
+# Local test docs if desired
+docs/koda_test.txt

@@ -148,7 +148,7 @@ Soru ID:
 Soru:
 {req.question}
 
-ÅÄ±klar:
+Şıklar:
 {options_text}
 
 Doğru cevap:

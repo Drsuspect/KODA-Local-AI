@@ -1,9 +1,9 @@
-﻿from pathlib import Path
+from pathlib import Path
 from typing import Dict, Optional
 import shutil
 
 from fastapi import FastAPI, UploadFile, File
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from llm_core.local_model import LocalLLM
 from audit.audit_logger import AuditLogger
@@ -15,7 +15,7 @@ from rag.chroma_retriever import ChromaRetriever
 from common.text_cleaner import clean_llm_output
 
 
-APP_VERSION = "0.9.0"
+APP_VERSION = "0.1.0"
 DOCS_DIR = Path("data/documents")
 DOCS_DIR.mkdir(exist_ok=True)
 
@@ -29,7 +29,7 @@ ALLOWED_DOCUMENT_EXTENSIONS = {
 app = FastAPI(
     title="KODA Secure LLM Core API",
     version=APP_VERSION,
-    description="Offline, local, secure RAG-powered Turkish LLM runtime."
+    description="Local-first experimental RAG-powered Turkish LLM runtime."
 )
 
 
@@ -48,7 +48,7 @@ class AskResponse(BaseModel):
     answer: str
     used_context: bool
     context: str | None = None
-    sources: list[SourceItem] = []
+    sources: list[SourceItem] = Field(default_factory=list)
     blocked: bool = False
     reason: str | None = None
 

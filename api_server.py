@@ -27,7 +27,7 @@ ALLOWED_DOCUMENT_EXTENSIONS = {
 
 
 app = FastAPI(
-    title="KODA Secure LLM Core API",
+    title="KODA Local AI API",
     version=APP_VERSION,
     description="Local-first experimental RAG-powered Turkish LLM runtime."
 )

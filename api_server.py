@@ -35,7 +35,7 @@ app = FastAPI(
 
 class AskRequest(BaseModel):
     question: str
-    user_role: str = "admin"
+    user_role: str = "research"
 
 
 class SourceItem(BaseModel):
@@ -119,25 +119,25 @@ def build_tutor_prompt(req: TutorExplainRequest) -> str:
         f"{key}) {value}" for key, value in req.options.items()
     )
 
-    passage_text = req.passage or "Bu soru iÃ§in ders anlatÄ±mÄ± metni verilmedi."
-    hint_text = req.explanation_hint or "Ek aÃ§Ä±klama ipucu verilmedi."
-    user_answer_text = req.user_answer or "Ã–ÄŸrenci cevabÄ± belirtilmedi."
+    passage_text = req.passage or "Bu soru için ders anlatımı metni verilmedi."
+    hint_text = req.explanation_hint or "Ek açıklama ipucu verilmedi."
+    user_answer_text = req.user_answer or "Öğrenci cevabı belirtilmedi."
 
     return f"""
 Sen KODA AI Tutor'sun.
 
-GÃ¶revin:
-- Ã–ÄŸrenciye TÃ¼rkÃ§e, sade, sabÄ±rlÄ± ve Ã¶ÄŸretici cevap vermek.
-- CevabÄ± doÄŸrudan ezberletmek yerine mantÄ±ÄŸÄ±nÄ± anlatmak.
-- GÃ¶rme engelli kullanÄ±cÄ±ya uygun ÅŸekilde konuÅŸur gibi aÃ§Ä±klamak.
-- Gereksiz uzun konuÅŸmamak.
-- Matematikte adÄ±mlarÄ± net sÃ¶ylemek.
-- EÄŸer Ã¶ÄŸrenci "neden" diye soruyorsa sebebi anlat.
-- EÄŸer Ã¶ÄŸrenci yanlÄ±ÅŸ cevap verdiyse, doÄŸru cevabÄ± ve nedenini aÃ§Ä±kla.
-- EÄŸer Ã¶ÄŸrenci anlamadÄ±ÄŸÄ±nÄ± sÃ¶ylÃ¼yorsa daha basit Ã¶rnek ver.
-- Soru, ÅŸÄ±klar ve doÄŸru cevap dÄ±ÅŸÄ±na gereksiz bilgi ekleme.
-- Ders anlatÄ±mÄ± varsa Ã¶ncelikle ona dayan.
-- BilmediÄŸin ÅŸeyi uydurma.
+Görevin:
+- Öğrenciye Türkçe, sade, sabırlı ve öğretici cevap vermek.
+- Cevabı doğrudan ezberletmek yerine mantığını anlatmak.
+- Görme engelli kullanıcıya uygun şekilde konuşur gibi açıklamak.
+- Gereksiz uzun konuşmamak.
+- Matematikte adımları net söylemek.
+- Eğer öğrenci "neden" diye soruyorsa sebebi anlat.
+- Eğer öğrenci yanlış cevap verdiyse, doğru cevabı ve nedenini açıkla.
+- Eğer öğrenci anlamadığını söylüyorsa daha basit örnek ver.
+- Soru, şıklar ve doğru cevap dışına gereksiz bilgi ekleme.
+- Ders anlatımı varsa öncelikle ona dayan.
+- Bilmediğin şeyi uydurma.
 
 Ders kodu:
 {req.lesson_code}
@@ -151,26 +151,26 @@ Soru:
 ÅÄ±klar:
 {options_text}
 
-DoÄŸru cevap:
+Doğru cevap:
 {req.correct_answer}
 
-Ã–ÄŸrencinin cevabÄ±:
+Öğrencinin cevabı:
 {user_answer_text}
 
-Ã–ÄŸrencinin mesajÄ±:
+Öğrencinin mesajı:
 {req.user_message}
 
-Ders anlatÄ±mÄ± / passage:
+Ders anlatımı / passage:
 {passage_text}
 
-Mevcut aÃ§Ä±klama ipucu:
+Mevcut açıklama ipucu:
 {hint_text}
 
-Cevap formatÄ±:
-- Ã–nce kÄ±sa cevap ver.
-- Sonra mantÄ±ÄŸÄ± 2-4 cÃ¼mleyle aÃ§Ä±kla.
-- Gerekirse kÃ¼Ã§Ã¼k bir Ã¶rnek ver.
-- Sonunda Ã¶ÄŸrenciyi devam etmeye teÅŸvik et.
+Cevap formatı:
+- Önce kısa cevap ver.
+- Sonra mantığını 2-4 cümleyle açıkla.
+- Gerekirse küçük bir örnek ver.
+- Sonunda öğrenciyi devam etmeye teşvik et.
 """.strip()
 
 
@@ -178,7 +178,7 @@ Cevap formatÄ±:
 def health():
     return {
         "status": "ok",
-        "system": "KODA Secure LLM Core",
+        "system": "KODA Local AI",
         "version": APP_VERSION,
         "documents": len(documents),
         "chunks": len(chunks),
@@ -209,7 +209,7 @@ def ask(request: AskRequest):
 
     if not question:
         return AskResponse(
-            answer="Soru boÅŸ olamaz.",
+            answer="Soru boş olamaz.",
             used_context=False,
             sources=[]
         )
@@ -223,7 +223,7 @@ def ask(request: AskRequest):
         )
 
         return AskResponse(
-            answer="Sorgu gÃ¼venlik politikasÄ± nedeniyle engellendi.",
+            answer="Sorgu güvenlik politikası nedeniyle engellendi.",
             used_context=False,
             sources=[],
             blocked=True,
@@ -269,7 +269,7 @@ def tutor_explain(req: TutorExplainRequest):
         )
 
         return TutorExplainResponse(
-            answer="Bu istek gÃ¼venlik politikasÄ± nedeniyle yanÄ±tlanamaz.",
+            answer="Bu istek güvenlik politikası nedeniyle yanıtlanamaz.",
             lesson_code=req.lesson_code,
             question_id=req.question_id,
             used_passage=bool(req.passage),
@@ -356,7 +356,7 @@ async def upload_document(file: UploadFile = File(...)):
     if not file.filename:
         return {
             "status": "error",
-            "message": "Dosya adÄ± boÅŸ olamaz."
+            "message": "Dosya adı boş olamaz."
         }
 
     file_name = Path(file.filename).name
@@ -378,7 +378,7 @@ async def upload_document(file: UploadFile = File(...)):
         "status": "uploaded",
         "file_name": file_name,
         "path": str(target_path),
-        "message": "Dosya yÃ¼klendi. Bilgi havuzuna almak iÃ§in /reindex Ã§alÄ±ÅŸtÄ±r."
+        "message": "Dosya yüklendi. Bilgi havuzuna almak için /reindex çalıştır."
     }
 
 
@@ -390,14 +390,14 @@ def delete_document(file_name: str):
     if not target_path.exists():
         return {
             "status": "error",
-            "message": "Dosya bulunamadÄ±.",
+            "message": "Dosya bulunamadı.",
             "file_name": safe_name
         }
 
     if not target_path.is_file():
         return {
             "status": "error",
-            "message": "Hedef bir dosya deÄŸil.",
+            "message": "Hedef bir dosya değil.",
             "file_name": safe_name
         }
 
@@ -406,5 +406,5 @@ def delete_document(file_name: str):
     return {
         "status": "deleted",
         "file_name": safe_name,
-        "message": "Dosya silindi. ChromaDB gÃ¼ncellemesi iÃ§in /reindex Ã§alÄ±ÅŸtÄ±r."
+        "message": "Dosya silindi. ChromaDB güncellemesi için /reindex çalıştır."
     }

@@ -1,210 +1,156 @@
-# KODA Local AI
+# KODAAI Lokal AI
 
-**Local-first Turkish AI research for accessible, voice-first education.**
+**Lokal-first Türkçe yapay zekâ araştırması; erişilebilir, ses öncelikli eğitim için belgeye dayalı ve kontrollü yardım.**
 
-KODA Local AI is an experimental local artificial intelligence layer developed as part of the KODA R&D ecosystem.
+> Durum: Beta / Ar-Ge - Research Preview v0.1
 
-The project explores how locally running language models, semantic retrieval, and controlled AI assistance can support accessible and voice-first educational systems without handing control of the application flow to a generative model.
+KODAAI Lokal AI, KODAAI erişilebilir teknoloji ve eğitim Ar-Ge ekosisteminin lokal yapay zekâ katmanıdır. Proje; lokal çalışan dil modelleri, RAG, kontrollü eğitim açıklamaları ve ses öncelikli erişilebilir etkileşimi araştırır.
 
-> Status: Research Preview - v0.1
+## Temel Tasarım İlkesi
 
-## Goals
+**Yapay zekâ uygulamayı yönetmez.**
 
-KODA Local AI focuses on:
+Kimlik, navigasyon, ders, test, sınav ve erişilebilirlik akışları deterministik KODAAI uygulama katmanında kalır. Üretken model, sınırlandırılmış bir yardımcı olarak kullanılır.
 
-- local-first AI execution
-- Turkish language interaction
-- semantic document retrieval
-- Retrieval-Augmented Generation (RAG)
-- controlled educational explanations
-- accessibility-oriented AI interaction
-- privacy-conscious local processing
-- future voice-first integration
+## Güncel Araştırma Hattı
 
-## Current Technology Baseline
-
-- Gemma 3 4B
-- Ollama local runtime
-- sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
-- ChromaDB
+- Gemma 3 4B / Ollama lokal runtime
+- multilingual MiniLM embeddings
+- ChromaDB tabanlı RAG
+- semantik + lexical/hybrid retrieval araştırması
 - FastAPI
-- PyMuPDF
-- python-docx
+- Türkçe belgeye dayalı soru-cevap
+- erişilebilir yanıt dönüşümü
+- ses öncelikli web arayüzü
+- kontrollü MathSpeak ve Reading/TTS erişilebilirlik katmanları
 
-The current Gemma model is a baseline model and has not been fine-tuned by KODA.
+Model ağırlıkları bu repoda dağıtılmaz.
 
-Fine-tuning and LoRA experiments are planned as a separate research stage.
+## Eğitim Kapsamı
 
-## Current RAG Pipeline
+Mevcut Beta/Ar-Ge bilgi deposu EKPSS lisans düzeyine yönelik Türkçe, Coğrafya, Matematik, Tarih ve Vatandaşlık içerikleriyle test edilmektedir. Gerçek eğitim corpus'u public repoya dahil edilmez.
 
-Documents
-    |
-    v
-TXT / PDF / DOCX
-    |
-    v
-Document Loader
-    |
-    v
-Text Chunker
-    |
-    v
+## Erişilebilirlik
+
+KODAAI'nin erişilebilirlik yaklaşımı yalnız UI seviyesinde değildir. Metin ve matematiksel ifadelerin sesli aktarımı için deterministik kurallar üzerinde çalışılır.
+
+### KODAAI MathSpeak V1.0
+
+Public standart özeti: `standards/math/README.md`
+
+Production Math Engine, tam regression corpus'u ve gerçek eğitim verileri public değildir.
+
+### KODAAI Reading / TTS Standardı V2.x
+
+Public standart özeti: `standards/reading/README.md`
+
+Soru önce yaklaşımı, üç noktanın boşluk/noktalama ayrımı, Roma rakamları, vurgu-duraklama ve görsel biçimlendirmelerin erişilebilir aktarımı gibi kurallar bu hatta ele alınır.
+
+## Ses Öncelikli Web Arayüzü
+
+`web/` altında güvenli public örnek arayüz bulunur. Örnek;
+
+- Kapsamı Dinle,
+- Konuşmayı Başlat,
+- Durdur,
+- klavye/Enter kontrolü,
+- aria-live sistem durumu,
+- soru ve yanıt transcript alanı
+
+gibi erişilebilir etkileşimleri gösterir.
+
+Public örnek production host, özel telemetry ayrıntıları, credential veya production corpus içermez.
+
+## RAG Akışı
+
+```text
+Belgeler
+   |
+   v
+Loader / Chunker
+   |
+   v
 Multilingual Embeddings
-    |
-    v
+   |
+   v
 ChromaDB
-    |
-    v
-Semantic Retrieval
-    |
-    v
-Gemma 3 4B via Ollama
-    |
-    v
-Controlled Turkish Response
+   |
+   v
+Retrieval
+   |
+   v
+Gemma 3 4B / Ollama
+   |
+   v
+Kontrollü Türkçe Yanıt
+   |
+   v
+Erişilebilirlik Katmanı
+```
 
-## Educational AI
+## Public Repo Güvenlik Sınırı
 
-The experimental API includes a tutor explanation flow that works with structured educational information including:
+Bu repoda paylaşılmayan production varlıkları şunları kapsar:
 
-- lesson code
-- question ID
-- question text
-- answer choices
-- correct answer
-- student answer
-- lesson passage
-- explanation hints
+- gerçek Reading / Quiz / Exam corpus'u,
+- Math Engine V1.0 production implementation,
+- Reading production dönüştürme pipeline'ı,
+- Chroma index ve embeddings,
+- model ağırlıkları,
+- telemetry ve audit verileri,
+- kullanıcı/session/request kayıtları,
+- MP3/TTS ve ham ses varlıkları,
+- `.env`, token, credential ve production config,
+- backup/archive çalışma kopyaları.
 
-The language model does not control the educational application.
+`.gitignore` bu varlıkların yaygın biçimlerini dışarıda tutar; commit öncesinde ayrıca Git durumu kontrol edilmelidir.
 
-KODA's deterministic application layer remains authoritative for navigation, lesson flow, quizzes, exams, and accessibility behaviour.
+## Güvenlik
 
-The AI layer is intended for bounded assistance such as:
+Bu repo aktif Ar-Ge çalışmasını temsil eder. Development yönetim/document endpointleri doğrudan public internete açılmamalıdır. Authentication, authorization, rate limiting ve production hardening ayrı deployment katmanında ele alınmalıdır.
 
-- explaining why an answer is correct
-- explaining a subject another way
-- responding when a learner says they did not understand
-- producing a simpler example
+Ayrıntılar için `SECURITY.md` dosyasına bakın.
 
-## Accessibility Direction
+## Repository Yapısı
 
-Future research is planned to connect KODA Local AI with KODA's accessibility work, including:
-
-- accessible Turkish reading rules
-- mathematical speech representation
-- voice-first interaction
-- local speech recognition
-- controlled educational dialogue
-
-## Privacy
-
-The architecture is designed for local operation.
-
-The current research prototype can create local audit logs during development. These logs remain on the local machine and are excluded from the repository.
-
-Audit logging is planned to become explicitly opt-in before production use.
-
-No telemetry service is required by the current core architecture.
-
-## Security Notice
-
-KODA Local AI is currently a research prototype.
-
-The current PromptGuard is a basic rule-based experimental filter and must not be considered a complete security boundary.
-
-The development API is intended for trusted local environments only.
-
-Do not expose the current API directly to the public Internet.
-
-See SECURITY.md for additional information.
-
-## Repository Structure
-
+```text
 KODA-Local-AI/
-|-- audit/
+|-- audit/                 # logger implementation; runtime logs excluded
 |-- common/
-|-- data/
-|   `-- documents/        # local runtime documents, ignored by Git
-|-- examples/
-|   `-- documents/        # safe public sample documents
+|-- examples/              # safe public examples
 |-- experiments/
-|   `-- legacy/
 |-- llm_core/
 |-- rag/
 |-- security/
+|-- standards/
+|   |-- math/
+|   `-- reading/
+|-- web/                   # safe public accessible UI example
 |-- .env.example
+|-- .gitignore
 |-- api_server.py
 |-- main.py
-|-- requirements.txt
 |-- ARCHITECTURE.md
 |-- SECURITY.md
-`-- README.md
+`-- requirements.txt
+```
 
-## Research Roadmap
+## Privacy
 
-### v0.1 - Local RAG Baseline
+Lokal çalışma gizlilik açısından avantaj sağlar ancak tek başına güvenlik garantisi değildir. Production sistem güvenliği; API yapılandırması, işletim sistemi, doküman erişimi, loglama, izinler ve deployment mimarisinin tamamına bağlıdır.
 
-- Gemma 3 4B
-- Ollama
-- multilingual embeddings
-- ChromaDB
-- semantic RAG
-- local FastAPI prototype
+## Proje
 
-### v0.2 - Education RAG
-
-- structured educational content
-- tutor explanation evaluation
-- grounding tests
-- Turkish answer quality benchmarks
-
-### v0.3 - Accessibility Layer
-
-- KODA Reading rules
-- KODA MathSpeak rules
-- accessible response transformation
-
-### v0.4 - Voice
-
-- local speech recognition integration
-- voice-first educational interaction
-- controlled speech input/output pipeline
-
-### v0.5 - KODA Model Research
-
-- dataset preparation
-- baseline evaluation
-- LoRA / fine-tuning experiments
-- comparison with small local models
-
-## Project Status
-
-This repository represents active research and development.
-
-Interfaces, models, and architecture may change significantly.
-
-It should not yet be considered production-ready.
-
-## KODA
-
-KODA is an accessibility-focused, voice-first education research and development initiative.
+KODAAI; erişilebilir teknoloji, ses öncelikli sistemler, eğitim ve lokal yapay zekâ alanlarında Ar-Ge yürütür.
 
 Project website: https://kodaai.com.tr
 
----
-
 Designed and developed by Murat GUNEY LARRANAGA.
 
-Copyright 2026 KODA AI
+Copyright 2026 KODAAI / Murat GUNEY LARRANAGA.
 
 ## License and Usage
 
-Copyright 2026 KODA AI / Murat GUNEY LARRANAGA.
+This repository is published for research, evaluation, and collaboration purposes. No license is currently granted for commercial use, redistribution, sublicensing, or incorporation into commercial products without prior written permission.
 
-This repository is published for research, evaluation, and collaboration purposes.
-
-No license is currently granted for commercial use, redistribution, sublicensing, or incorporation into commercial products without prior written permission.
-
-For collaboration or commercial licensing inquiries:
-https://kodaai.com.tr
+Collaboration and licensing: https://kodaai.com.tr

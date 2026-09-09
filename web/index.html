@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>KODAAI Lokal AI - Erişilebilir Sesli Arayüz</title>
+  <meta name="description" content="KODAAI Lokal AI için erişilebilir, ses öncelikli araştırma arayüzü.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="shell">
+    <section class="card" aria-labelledby="pageTitle">
+      <p class="eyebrow">BETA / AR-GE</p>
+      <h1 id="pageTitle">KODAAI Lokal AI</h1>
+      <p class="lead">Belgeye dayalı, kontrollü ve ses öncelikli Türkçe yapay zekâ araştırma arayüzü.</p>
+
+      <div class="actions">
+        <button id="scopeBtn" type="button">
+          <strong>Kapsamı Dinle</strong>
+          <span>KODAAI bilgi kapsamını dinleyin</span>
+        </button>
+        <button id="startBtn" type="button">
+          <strong>Konuşmayı Başlat</strong>
+          <span>Sorunuzu sesli olarak iletin</span>
+        </button>
+        <button id="stopBtn" type="button" hidden>
+          <strong>Durdur</strong>
+          <span>Dinlemeyi veya seslendirmeyi durdur</span>
+        </button>
+      </div>
+
+      <div class="status">
+        <span>Sistem durumu:</span>
+        <strong id="status" role="status" aria-live="polite" aria-atomic="true">Hazır</strong>
+      </div>
+
+      <label for="transcript">Konuşma ve yanıt</label>
+      <textarea id="transcript" rows="12" readonly aria-label="KODAAI konuşma ve yanıt alanı" placeholder="Sorunuz ve KODAAI yanıtı burada görünecek..."></textarea>
+
+      <p class="notice">Araştırma sürümüdür. Kişisel veya hassas bilgi paylaşmayın. Yapay zekâ uygulama akışını yönetmez.</p>
+    </section>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>

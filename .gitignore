@@ -4,13 +4,14 @@ __pycache__/
 *.pyo
 *.pyd
 
-# Virtual environment
+# Virtual environments
 .venv/
 venv/
 env/
 
 # Local databases / vector stores
 chroma_db/
+chroma_db_test/
 *.sqlite
 *.sqlite3
 *.db
@@ -27,9 +28,14 @@ model_cache/
 *.safetensors
 *.onnx
 
-# Logs
+# Logs / telemetry / runtime audit data
 *.log
 logs/
+telemetry/
+audit/*.json
+audit/*.jsonl
+audit/*.csv
+audit/*.log
 
 # IDE / OS
 .vscode/
@@ -40,30 +46,29 @@ Thumbs.db
 # Environment / secrets
 .env
 .env.*
+!.env.example
 *.key
 *.pem
+*.pfx
+*.p12
+*.crt
+*.cer
 
-# Temporary files
+# Temporary / backup / stable working copies
 tmp/
 temp/
 *.tmp
+*.bak
+_archive/
+_references/
 
 # Python test/cache
 .pytest_cache/
 .mypy_cache/
 
-# Local test docs if desired
+# Local test docs / production corpus
 docs/koda_test.txt
-
-# Local runtime data
 data/
-
-# Backup files
-*.bak
-
-
-# Keep public environment template
-!.env.example
 
 # Audio / private voice data
 *.wav
@@ -71,3 +76,16 @@ data/
 recordings/
 koda_tts_dataset/
 generated_audio/
+outputs/
+
+# Production accessibility implementations and private corpora
+math_engine/
+reading_engine/
+production_math/
+production_reading/
+regression_corpus/
+
+# Deployment/private runtime configuration
+deploy/private/
+production.env
+server_config/

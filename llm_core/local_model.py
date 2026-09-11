@@ -1,4 +1,4 @@
-﻿import json
+import json
 import urllib.request
 import urllib.error
 import re
@@ -17,10 +17,27 @@ class LocalLLM:
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
 
+    def _strip_source_metadata(self, context: str) -> str:
+        """
+        LLM promptuna retrieval dosya yolu ve skor metadata'si göndermez.
+        Kaynak bilgisi API sources alanında ayrı tutulur.
+        """
+        if not context:
+            return ""
+
+        return re.sub(
+            r"\[Kaynak:[^\]\r\n]*\]\s*",
+            "",
+            context,
+            flags=re.IGNORECASE,
+        ).strip()
+
     def generate(self, question: str, context: str = "") -> str:
+        clean_context = self._strip_source_metadata(context)
+
         effective_context = self._filter_factor_context(
             question,
-            context
+            clean_context
         )
 
         prompt = self._build_prompt(
@@ -35,7 +52,7 @@ class LocalLLM:
             "options": {
                 "temperature": 0.2,
                 "top_p": 0.9,
-                "num_predict": 512
+                "num_predict": 96
             }
         }
 

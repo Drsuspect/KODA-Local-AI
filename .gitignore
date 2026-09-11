@@ -89,3 +89,7 @@ regression_corpus/
 deploy/private/
 production.env
 server_config/
+
+common/accessibility_formatter.py
+
+audit/telemetry_logger.py

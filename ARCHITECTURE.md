@@ -1,10 +1,10 @@
-# KODA Local AI Architecture
+# KODAAI Local AI Architecture
 
 ## Design Principle
 
-The language model is not the controller of the KODA application.
+The language model is not the controller of the KODAAI application.
 
-The deterministic KODA application layer controls:
+The deterministic KODAAI application layer controls:
 
 - application state
 - authentication
@@ -15,6 +15,120 @@ The deterministic KODA application layer controls:
 - accessibility rules
 
 The AI layer acts as a bounded assistant.
+
+## KODAAI Math Engine V1.0
+
+KODAAI Math Engine is the deterministic mathematical reasoning layer of KODAAI Local AI.
+
+Supported mathematical requests are handled before semantic retrieval and generative-model fallback.
+
+The language model is not the mathematical authority for expressions supported by the Math Engine.
+
+### Request Routing
+
+User Question
+    |
+    v
+Math Intent / Routing
+    |
+    +--> Algebra Engine
+    |
+    +--> Arithmetic Evaluator
+    |
+    +--> Percentage Engine
+    |
+    +--> Ratio Engine
+    |
+    +--> Unsupported / Non-Math
+              |
+              v
+        RAG / Local LLM
+
+The active MathService routing order is:
+
+1. algebra
+2. unsupported x-equation guard
+3. explicit arithmetic
+4. percentage
+5. ratio
+6. RAG / LLM fallback
+
+A mathematical request handled by the deterministic engine is returned directly without retrieved context.
+
+### Algebra Pipeline
+
+Equation
+    |
+    v
+Parse
+    |
+    v
+Normalize
+    |
+    v
+Equation Classification
+    |
+    v
+Deterministic Solver
+    |
+    v
+Explanation Steps
+    |
+    v
+Verification
+
+The V1.0 algebra baseline supports:
+
+- one-variable linear equations
+- two-sided linear equations
+- positive and negative coefficients
+- decimal coefficients
+- division forms
+- parentheses
+- distributive-property expressions
+- explicit and implicit multiplication
+- reverse equation forms
+- zero-coefficient equations
+
+Equation results are classified as:
+
+- unique_solution
+- no_solution
+- infinite_solutions
+
+### Deterministic Boundary
+
+The Math Engine does not use a generative model to determine the authoritative mathematical result.
+
+For supported expressions, calculation and equation classification are deterministic.
+
+The generated result may include:
+
+- normalized expression
+- mathematical classification
+- result or solution
+- deterministic explanation steps
+- verification state
+- accessibility-oriented answer text
+
+Unsupported expressions are not silently forced through another deterministic mathematical engine. They remain available to the wider KODAAI Local AI routing and fallback architecture.
+
+### V1.0 Stable Baseline
+
+KODAAI Math Engine V1.0 was promoted unchanged from the V0.13 final hardening baseline.
+
+Validation completed before promotion:
+
+- 47 / 47 final regression tests passed
+- 3 / 3 API closure tests passed
+- stable source snapshot compiled successfully
+- SHA-256 integrity manifest generated and verified
+
+Immutable reference:
+
+    _references/MATH_ENGINE_V1_0_STABLE
+
+The V1.0 snapshot is the official stable baseline for the Math Engine.
 
 ## Core Pipeline
 
@@ -92,7 +206,7 @@ The LLM explains the information supplied to it.
 
 Planned architecture:
 
-KODA Education Engine
+KODAAI Education Engine
     |
     v
 Bounded AI Assistance
@@ -117,9 +231,9 @@ Speech
 Local STT
   |
   v
-KODA Intent / State Engine
+KODAAI Intent / State Engine
   |
-  +--> deterministic command --> KODA
+  +--> deterministic command --> KODAAI
   |
   +--> explanation request --> Local AI
                                 |

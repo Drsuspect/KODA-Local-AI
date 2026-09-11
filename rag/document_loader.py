@@ -1,4 +1,5 @@
 ﻿from pathlib import Path
+import json
 import pymupdf
 from docx import Document
 
@@ -11,7 +12,7 @@ class DocumentLoader:
     def load_documents(self) -> list[dict]:
         documents = []
 
-        for file_path in self.docs_dir.iterdir():
+        for file_path in self.docs_dir.rglob("*"):
             if file_path.is_file():
                 suffix = file_path.suffix.lower()
 
@@ -24,6 +25,9 @@ class DocumentLoader:
 
                     elif suffix == ".docx":
                         text = self._load_docx(file_path)
+
+                    elif suffix == ".json":
+                        text = self._load_json(file_path)
 
                     else:
                         continue
@@ -69,4 +73,33 @@ class DocumentLoader:
                 paragraphs.append(text)
 
         return "\n".join(paragraphs)
+
+    def _load_json(self, file_path: Path) -> str:
+        with open(file_path, "r", encoding="utf-8-sig") as f:
+            data = json.load(f)
+
+        return self._json_to_text(data)
+
+    def _json_to_text(self, data, prefix="") -> str:
+        lines = []
+
+        if isinstance(data, dict):
+            for key, value in data.items():
+                label = f"{prefix}{key}"
+
+                if isinstance(value, (dict, list)):
+                    lines.append(f"{label}:")
+                    lines.append(self._json_to_text(value, prefix="  "))
+                else:
+                    lines.append(f"{label}: {value}")
+
+        elif isinstance(data, list):
+            for index, item in enumerate(data, start=1):
+                lines.append(f"{prefix}Kayıt {index}:")
+                lines.append(self._json_to_text(item, prefix="  "))
+
+        else:
+            lines.append(f"{prefix}{data}")
+
+        return "\n".join(lines)
 

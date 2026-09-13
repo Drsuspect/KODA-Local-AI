@@ -4,6 +4,10 @@ import urllib.error
 import re
 
 
+class GenerationCancelled(Exception):
+    pass
+
+
 class LocalLLM:
     def __init__(
         self,
@@ -32,7 +36,75 @@ class LocalLLM:
             flags=re.IGNORECASE,
         ).strip()
 
-    def generate(self, question: str, context: str = "") -> str:
+    def _ollama_generate(
+        self,
+        prompt: str,
+        options: dict,
+        cancel_event=None
+    ) -> str:
+        payload = {
+            "model": self.model_name,
+            "prompt": prompt,
+            "stream": True,
+            "options": options
+        }
+
+        req = urllib.request.Request(
+            url=f"{self.base_url}/api/generate",
+            data=json.dumps(
+                payload,
+                ensure_ascii=False
+            ).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+            method="POST"
+        )
+
+        parts = []
+
+        with urllib.request.urlopen(
+            req,
+            timeout=self.timeout
+        ) as response:
+
+            for raw_line in response:
+
+                if cancel_event is not None and cancel_event.is_set():
+                    try:
+                        response.close()
+                    finally:
+                        raise GenerationCancelled(
+                            "LLM generation cancelled"
+                        )
+
+                line = raw_line.decode("utf-8").strip()
+
+                if not line:
+                    continue
+
+                data = json.loads(line)
+
+                chunk = data.get("response", "")
+
+                if chunk:
+                    parts.append(chunk)
+
+                if data.get("done") is True:
+                    break
+
+        if cancel_event is not None and cancel_event.is_set():
+            raise GenerationCancelled(
+                "LLM generation cancelled"
+            )
+
+        return "".join(parts).strip()
+
+
+    def generate(
+        self,
+        question: str,
+        context: str = "",
+        cancel_event=None
+    ) -> str:
         clean_context = self._strip_source_metadata(context)
 
         effective_context = self._filter_factor_context(
@@ -45,42 +117,44 @@ class LocalLLM:
             effective_context
         )
 
-        payload = {
-            "model": self.model_name,
-            "prompt": prompt,
-            "stream": False,
-            "options": {
-                "temperature": 0.2,
-                "top_p": 0.9,
-                "num_predict": 96
-            }
-        }
-
         try:
-            req = urllib.request.Request(
-                url=f"{self.base_url}/api/generate",
-                data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
-                headers={"Content-Type": "application/json"},
-                method="POST"
+            answer = self._ollama_generate(
+                prompt=prompt,
+                options={
+                    "temperature": 0.2,
+                    "top_p": 0.9,
+                    "num_predict": 64
+                },
+                cancel_event=cancel_event
             )
 
-            with urllib.request.urlopen(req, timeout=self.timeout) as response:
-                data = json.loads(response.read().decode("utf-8"))
-
-            answer = data.get("response", "").strip()
-
             if not answer:
-                return "Model boş cevap döndürdü."
+                return "Model bo? cevap d?nd?rd?."
 
-            filtered_answer = self._filter_scope_answer(question, answer)
+            filtered_answer = self._filter_scope_answer(
+                question,
+                answer
+            )
 
             if filtered_answer:
                 return filtered_answer
 
-            if effective_context.strip() and self._is_factor_question(question):
+            if (
+                effective_context.strip()
+                and self._is_factor_question(question)
+            ):
+                if (
+                    cancel_event is not None
+                    and cancel_event.is_set()
+                ):
+                    raise GenerationCancelled(
+                        "LLM generation cancelled"
+                    )
+
                 repaired_answer = self._repair_factor_answer(
                     question,
-                    effective_context
+                    effective_context,
+                    cancel_event=cancel_event
                 )
 
                 repaired_filtered = self._filter_scope_answer(
@@ -93,19 +167,26 @@ class LocalLLM:
 
             return answer
 
+        except GenerationCancelled:
+            raise
+
         except urllib.error.URLError as e:
             return (
-                "Ollama API bağlantısı kurulamadı. "
-                "Ollama uygulaması açık mı kontrol et. "
+                "Ollama API ba?lant?s? kurulamad?. "
+                "Ollama uygulamas? a??k m? kontrol et. "
                 f"Model: {self.model_name}. "
                 f"Detay: {e}"
             )
 
         except json.JSONDecodeError as e:
-            return f"Ollama API geçersiz JSON döndürdü. Detay: {e}"
+            return (
+                "Ollama API ge?ersiz JSON d?nd?rd?. "
+                f"Detay: {e}"
+            )
 
         except Exception as e:
-            return f"Beklenmeyen LLM API hatası: {e}"
+            return f"Beklenmeyen LLM API hatas?: {e}"
+
 
     def _filter_factor_context(
         self,
@@ -176,7 +257,8 @@ class LocalLLM:
     def _repair_factor_answer(
         self,
         question: str,
-        context: str
+        context: str,
+        cancel_event=None
     ) -> str:
         prompt = f"""
 Sen bir kaynak-bağlam cevap düzelticisisin.
@@ -199,40 +281,25 @@ Soru:
 Yalnızca sorunun doğrudan cevabı:
 """.strip()
 
-        payload = {
-            "model": self.model_name,
-            "prompt": prompt,
-            "stream": False,
-            "options": {
-                "temperature": 0.0,
-                "top_p": 0.8,
-                "num_predict": 256
-            }
-        }
-
         try:
-            req = urllib.request.Request(
-                url=f"{self.base_url}/api/generate",
-                data=json.dumps(
-                    payload,
-                    ensure_ascii=False
-                ).encode("utf-8"),
-                headers={"Content-Type": "application/json"},
-                method="POST"
+            answer = self._ollama_generate(
+                prompt=prompt,
+                options={
+                    "temperature": 0.0,
+                    "top_p": 0.8,
+                    "num_predict": 64
+                },
+                cancel_event=cancel_event
             )
 
-            with urllib.request.urlopen(
-                req,
-                timeout=self.timeout
-            ) as response:
-                data = json.loads(
-                    response.read().decode("utf-8")
-                )
+            return answer.strip()
 
-            return data.get("response", "").strip()
+        except GenerationCancelled:
+            raise
 
         except Exception:
             return ""
+
 
     def _filter_scope_answer(self, question: str, answer: str) -> str:
         """

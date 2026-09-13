@@ -109,12 +109,19 @@ class ChromaRetriever:
         query: str,
         top_k: int = 3,
         min_similarity: float = 0.10,
-        subject: str | None = None
+        subject: str | None = None,
+        preferred_files: set[str] | None = None
     ) -> dict:
         import re
         import unicodedata
 
         query = query.strip()
+
+        preferred_files = {
+            str(name).casefold()
+            for name in (preferred_files or set())
+            if name
+        }
 
         if not query:
             return {
@@ -373,11 +380,24 @@ class ChromaRetriever:
             ):
                 direct_fact_bonus = 0.05
 
+            route_bonus = 0.0
+
+            file_name = str(
+                meta.get("file_name", "")
+            ).casefold()
+
+            if (
+                preferred_files
+                and file_name in preferred_files
+            ):
+                route_bonus = 0.45
+
             final_score = (
                 hybrid_score
                 + intent_bonus
                 + list_intent_bonus
                 + direct_fact_bonus
+                + route_bonus
             )
 
             ranked.append({
@@ -389,6 +409,7 @@ class ChromaRetriever:
                 "intent_bonus": intent_bonus,
                 "list_intent_bonus": list_intent_bonus,
                 "direct_fact_bonus": direct_fact_bonus,
+                "route_bonus": route_bonus,
                 "final_score": final_score,
             })
 
@@ -669,4 +690,6 @@ class ChromaRetriever:
             "context": "\n\n---\n\n".join(context_parts),
             "sources": sources
         }
+
+
 

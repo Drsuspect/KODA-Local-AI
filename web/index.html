@@ -3,43 +3,320 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#071525">
   <title>KODAAI Lokal AI - Erişilebilir Sesli Arayüz</title>
-  <meta name="description" content="KODAAI Lokal AI için erişilebilir, ses öncelikli araştırma arayüzü.">
-  <link rel="stylesheet" href="style.css">
+  <meta name="description" content="KODAAI Lokal AI için erişilebilir, belgeye dayalı, kontrollü ve ses öncelikli Türkçe yapay zekâ araştırma arayüzü.">
+  <link rel="stylesheet" href="/static/style.css?v=20260913-042617">
 </head>
 <body>
-  <main class="shell">
-    <section class="card" aria-labelledby="pageTitle">
-      <p class="eyebrow">BETA / AR-GE</p>
-      <h1 id="pageTitle">KODAAI Lokal AI</h1>
-      <p class="lead">Belgeye dayalı, kontrollü ve ses öncelikli Türkçe yapay zekâ araştırma arayüzü.</p>
+  <a class="skip-link" href="#mainContent">Ana içeriğe geç</a>
 
-      <div class="actions">
-        <button id="scopeBtn" type="button">
-          <strong>Kapsamı Dinle</strong>
-          <span>KODAAI bilgi kapsamını dinleyin</span>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="KODAAI ana menü">
+      <div class="brand" aria-label="KODAAI">
+        <div class="brand-wave" aria-hidden="true">
+          <i></i><i></i><i></i><i></i><i></i>
+        </div>
+        <div>
+          <div class="brand-name">KODAAI</div>
+          <div class="brand-sub">Platform · Intelligence · Standards</div>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <button class="nav-item active" type="button" data-panel="chat">
+          <span class="nav-icon" aria-hidden="true">⌂</span>
+          <span><strong>Sohbet</strong><small>AI ile konuş</small></span>
         </button>
-        <button id="startBtn" type="button">
-          <strong>Konuşmayı Başlat</strong>
-          <span>Sorunuzu sesli olarak iletin</span>
+        <button class="nav-item" id="scopeNavBtn" type="button">
+          <span class="nav-icon" aria-hidden="true">▣</span>
+          <span><strong>Neleri sorabilirim?</strong><small>Kapsamı dinle</small></span>
         </button>
-        <button id="stopBtn" type="button" hidden>
+        <button class="nav-item" id="sourcesNavBtn" type="button">
+          <span class="nav-icon" aria-hidden="true">▤</span>
+          <span><strong>Kaynaklar</strong><small>Kullanılan belgeler</small></span>
+        </button>
+        <button class="nav-item" id="historyNavBtn" type="button">
+          <span class="nav-icon" aria-hidden="true">◷</span>
+          <span><strong>Geçmiş</strong><small>Sohbet geçmişi</small></span>
+        </button>
+        <button class="nav-item" id="settingsNavBtn" type="button">
+          <span class="nav-icon" aria-hidden="true">⚙</span>
+          <span><strong>Ayarlar</strong><small>Dil, ses, görünüm</small></span>
+        </button>
+        <div class="nav-separator"></div>
+        <button class="nav-item" id="aboutNavBtn" type="button">
+          <span class="nav-icon" aria-hidden="true">ⓘ</span>
+          <span><strong>KODAAI Hakkında</strong><small>Proje ve vizyon</small></span>
+        </button>
+      </nav>
+
+      <div class="control-note">
+        <span class="check" aria-hidden="true">✓</span>
+        <div>
+          <strong>AI uygulamayı yönetmez.</strong>
+          <p>Uygulama akışı KODAAI tarafından kontrol edilir. Yapay zekâ yalnızca bilgi desteği sağlar.</p>
+        </div>
+      </div>
+    </aside>
+
+    <main id="mainContent" class="main">
+      <header class="hero">
+        <div>
+          <div class="hero-meta">
+            <span class="beta">BETA / AR-GE</span>
+            <span>Yerel AI. Gerçek Etki. Daha Erişilebilir Bir Gelecek.</span>
+          </div>
+          <h1>KODAAI <span>Lokal AI</span></h1>
+          <p class="lead">Belgeye dayalı, kontrollü ve ses öncelikli Türkçe yapay zekâ araştırma arayüzü.</p>
+        </div>
+      </header>
+
+      <section class="feature-grid" aria-label="Temel özellikler">
+        <article class="feature green">
+          <span class="feature-icon" aria-hidden="true">▦</span>
+          <div><strong>Yerel AI</strong><small>Cihazınızda çalışır</small></div>
+        </article>
+        <article class="feature blue">
+          <span class="feature-icon" aria-hidden="true">▤</span>
+          <div><strong>Belge destekli</strong><small>Kendi bilgi kaynaklarımız</small></div>
+        </article>
+        <article class="feature purple">
+          <span class="feature-icon" aria-hidden="true">◇</span>
+          <div><strong>Kontrollü yanıt</strong><small>Güvenli ve denetlenebilir</small></div>
+        </article>
+      </section>
+
+      <section class="voice-console" aria-labelledby="voiceTitle">
+        <div class="sound-wave left-wave" aria-hidden="true"></div>
+        <div class="sound-wave right-wave" aria-hidden="true"></div>
+
+        <button id="startBtn" class="mic-button" type="button" aria-describedby="micHelp">
+          <span class="mic-symbol" aria-hidden="true">●</span>
+          <span class="sr-only">Konuşmayı başlat</span>
+        </button>
+
+        <div class="voice-title">
+          <h2 id="voiceTitle">Konuşmaya Başla</h2>
+          <p>Sorunuzu sesli olarak iletin.</p>
+        </div>
+
+        <div class="voice-shortcuts">
+          <button id="scopeBtn" class="shortcut" type="button">
+            <span class="shortcut-icon" aria-hidden="true">▣</span>
+            <span><strong>Neleri sorabilirim?</strong><small>Kapsamı sesli olarak dinleyin</small></span>
+            <span aria-hidden="true">›</span>
+          </button>
+
+          <button id="writeBtn" class="shortcut" type="button">
+            <span class="shortcut-icon" aria-hidden="true">⌨</span>
+            <span><strong>Yaz ile sor</strong><small>Klavyeyle soru yazın</small></span>
+            <span aria-hidden="true">›</span>
+          </button>
+        </div>
+
+        <div class="status-row">
+          <span id="statusDot" class="status-dot" aria-hidden="true"></span>
+          <strong id="status" role="status" aria-live="polite" aria-atomic="true">Hazır</strong>
+        </div>
+        <p id="micHelp" class="mic-help">Mikrofona dokunun ve sorunuzu konuşun.</p>
+
+        <button id="stopBtn" class="stop-button" type="button" hidden>
           <strong>Durdur</strong>
           <span>Dinlemeyi veya seslendirmeyi durdur</span>
         </button>
+      </section>
+
+      
+      <section id="scopeDisplay"
+               class="scope-display"
+               hidden
+               aria-labelledby="scopeDisplayTitle"
+               aria-live="polite">
+
+        <div class="scope-display-head">
+          <span class="scope-display-icon" aria-hidden="true"></span>
+
+          <div>
+            <h2 id="scopeDisplayTitle">KODAAI bilgi kapsamı</h2>
+            <p>Kapsam metni sesli olarak okunurken burada da görüntülenir.</p>
+          </div>
+        </div>
+
+        <div id="scopeDisplayText" class="scope-display-text"></div>
+
+      </section>
+      <section class="conversation" aria-label="Konuşma ve yanıt">
+        <article id="questionCard" class="message question-message" hidden>
+          <div class="avatar user-avatar" aria-hidden="true">●</div>
+          <div class="message-box">
+            <div class="message-head"><strong>Siz sordunuz</strong></div>
+            <p id="questionText"></p>
+          </div>
+        </article>
+
+        <article id="answerCard" class="message answer-message" hidden>
+          <div class="avatar ai-avatar" aria-hidden="true">≋</div>
+          <div class="message-box">
+            <div class="message-head"><strong>KODAAI yanıtı</strong></div>
+            <p id="answerText"></p>
+            <div class="answer-tools">
+              <button id="listenAnswerBtn" type="button">🔊 Yanıtı sesle dinle</button>
+              <button id="copyAnswerBtn" type="button">⧉ Kopyala</button>
+            </div>
+          </div>
+        </article>
+
+        <label class="sr-only" for="transcript">Konuşma ve yanıt</label>
+        <textarea id="transcript" class="legacy-transcript" rows="12" readonly
+          aria-label="KODAAI konuşma ve yanıt alanı"
+          placeholder="Sorunuz ve KODAAI yanıtı burada görünecek..."></textarea>
+      </section>
+
+      <form id="textAskForm" class="text-ask">
+        <label class="sr-only" for="questionInput">Sorunuzu yazın</label>
+        <input id="questionInput" type="text" autocomplete="off" placeholder="Sorunuzu buraya yazabilirsiniz...">
+        <button id="sendBtn" type="submit" aria-label="Soruyu gönder">➤</button>
+      </form>
+
+      <section class="bottom-strip" aria-label="KODAAI sistem bilgileri">
+        <div class="version"><strong>KODAAI</strong><small>Lokal AI v0.2</small></div>
+        <span>♟ Gemma 3 4B</span>
+        <span>▦ Yerel çalışma</span>
+        <span>▤ Belge destekli RAG</span>
+        <span>◇ Verileriniz sizde kalır</span>
+        <p>ⓘ Araştırma sürümüdür. Kişisel veya hassas bilgi paylaşmayın.</p>
+      </section>
+
+      <footer>
+        <span>KODAAI · Platform · Intelligence · Standards</span>
+        <span>KODAAI Murat Guney Larranaga tarafından tasarlanmış ve geliştirilmiştir. · ©2026 beta sürüm</span>
+      </footer>
+    </main>
+
+    <aside class="right-rail" aria-label="KODAAI Lokal AI özeti">
+      <div class="vision">
+        <strong>Herkes için<br>daha erişilebilir<br>bir gelecek.</strong>
+        <small>Eğitim · Teknoloji · Eşit Fırsat</small>
       </div>
+      <section class="rail-card">
+        <h2>KODAAI Lokal AI</h2>
+        <ul class="checks">
+          <li>Yerel çalışma</li>
+          <li>Türkçe odaklı</li>
+          <li>Belgeye dayalı yanıt</li>
+          <li>Görme engelli kullanıcılar için erişilebilir</li>
+          <li>Araştırma sürümü</li>
+        </ul>
+        <hr>
+        <h3>Mevcut bilgi kapsamı</h3>
+        <ul class="subjects">
+          <li>∑ Matematik</li>
+          <li>TR Türkçe</li>
+          <li>▱ Tarih</li>
+          <li>◎ Coğrafya</li>
+          <li>♙ Vatandaşlık</li>
+        
+        <hr>
 
-      <div class="status">
-        <span>Sistem durumu:</span>
-        <strong id="status" role="status" aria-live="polite" aria-atomic="true">Hazır</strong>
-      </div>
+        <section id="versionHistoryCard" class="version-history-card">
+          <div class="version-history-head">
+            <div>
+              <span class="version-kicker">GÜNCEL SÜRÜM</span>
+              <h3>KODAAI Lokal AI v0.2</h3>
+            </div>
+            <span class="version-badge">v0.2</span>
+          </div>
 
-      <label for="transcript">Konuşma ve yanıt</label>
-      <textarea id="transcript" rows="12" readonly aria-label="KODAAI konuşma ve yanıt alanı" placeholder="Sorunuz ve KODAAI yanıtı burada görünecek..."></textarea>
+          <ul class="version-summary">
+            <li>Yeni kullanıcı dostu arayüz</li>
+            <li>Ses öncelikli etkileşim geliştirmeleri</li>
+            <li>Kapsam bilgisinin ekranda ve sesli sunumu</li>
+            <li>Direct Knowledge altyapısı</li>
+            <li>22M+ yerel bilgi paketi</li>
+          </ul>
 
-      <p class="notice">Araştırma sürümüdür. Kişisel veya hassas bilgi paylaşmayın. Yapay zekâ uygulama akışını yönetmez.</p>
-    </section>
-  </main>
-  <script src="app.js"></script>
+          <button
+            id="versionDetailsBtn"
+            class="version-details-btn"
+            type="button"
+          >
+            Sürüm değişikliklerini görüntüle
+          </button>
+        </section>
+      </section>
+    </aside>
+  </div>
+
+  <dialog id="infoDialog">
+    <button id="dialogClose" type="button" class="dialog-close" aria-label="Pencereyi kapat">×</button>
+    <h2 id="dialogTitle">Bilgi</h2>
+    <div id="dialogBody"></div>
+  </dialog>
+
+  <script src="/static/app.js?v=20260911-095653"></script>
+
+  <dialog id="versionDialog" class="version-dialog">
+    <button id="versionDialogClose"
+            class="dialog-close"
+            type="button"
+            aria-label="Sürüm penceresini kapat"></button>
+
+    <h2>KODAAI Lokal AI  Sürüm Değişiklikleri</h2>
+
+    <div class="version-table-wrap">
+      <table class="version-table">
+        <thead>
+          <tr>
+            <th>Sürüm</th>
+            <th>Tarih</th>
+            <th>Başlıca değişiklikler</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>v0.2</strong></td>
+            <td>13.09.2026</td>
+            <td>
+              Yeni kullanıcı arayüzü; kapsam bilgisinin ekranda ve sesli sunumu;
+              Türkçe arayüz düzenlemeleri; sesli etkileşim geliştirmeleri;
+              production asset/cache düzenlemeleri; Direct Knowledge altyapısı;
+              22M+ yerel bilgi paketi.
+            </td>
+          </tr>
+
+          <tr>
+            <td><strong>v0.1</strong></td>
+            <td>09.09.2026</td>
+            <td>
+              İlk çalışan Lokal AI prototipi; Gemma 3 4B + Ollama;
+              Local RAG; Math Engine; API güvenliği; telemetry;
+              temel voice-first arayüz.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </dialog>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const versionDetailsBtn = document.getElementById("versionDetailsBtn");
+  const versionDialog = document.getElementById("versionDialog");
+  const versionDialogClose = document.getElementById("versionDialogClose");
+
+  if (versionDetailsBtn && versionDialog) {
+    versionDetailsBtn.addEventListener("click", () => {
+      versionDialog.showModal();
+    });
+  }
+
+  if (versionDialogClose && versionDialog) {
+    versionDialogClose.addEventListener("click", () => {
+      versionDialog.close();
+    });
+  }
+});
+</script>
 </body>
 </html>

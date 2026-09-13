@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import json
 import re
@@ -9,10 +9,11 @@ from pathlib import Path
 from tkinter import ttk
 
 
-ROOT = Path(r"C:\KODA_AI_LAB\04_KODA_Local_AI")
+ROOT = Path(__file__).resolve().parent.parent
 LOG_DIR = ROOT / "logs"
 
 TELEMETRY_FILE = LOG_DIR / "telemetry.jsonl"
+CONTENT_GAP_FILE = LOG_DIR / "content_gap.jsonl"
 SERVICE_LOG = LOG_DIR / "local_ai_service.log"
 RELEASE_HISTORY_FILE = ROOT / "data" / "release_history.json"
 
@@ -21,6 +22,7 @@ LOG_FILES = {
     "Audit Log": LOG_DIR / "audit_log.jsonl",
     "Blocked Queries": LOG_DIR / "blocked_queries.jsonl",
     "Telemetry Raw": LOG_DIR / "telemetry.jsonl",
+    "Content Gaps": CONTENT_GAP_FILE,
 }
 
 MAX_TELEMETRY_ROWS = 200
@@ -53,6 +55,7 @@ class KODAAIDashboard(tk.Tk):
 
         self.http_summary_var = tk.StringVar()
         self.http_search_var = tk.StringVar()
+        self.content_gap_summary_var = tk.StringVar()
 
         self.log_file_var = tk.StringVar(
             value="Local AI Service"
@@ -431,12 +434,18 @@ class KODAAIDashboard(tk.Tk):
             pady=(0, 12),
         )
         self.telemetry_tab = ttk.Frame(notebook)
+        self.content_gap_tab = ttk.Frame(notebook)
         self.logs_tab = ttk.Frame(notebook)
         self.release_tab = ttk.Frame(notebook)
 
         notebook.add(
             self.telemetry_tab,
             text="  Telemetry",
+        )
+
+        notebook.add(
+            self.content_gap_tab,
+            text="  Icerik Aciklari",
         )
 
         notebook.add(
@@ -447,9 +456,10 @@ class KODAAIDashboard(tk.Tk):
 
         notebook.add(
             self.release_tab,
-            text="Sürüm Geçmişi",
+            text="SÃ¼rÃ¼m GeÃ§miÅŸi",
         )
         self._build_telemetry_tab()
+        self._build_content_gap_tab()
         self._build_logs_tab()
 
         self._build_release_tab()
@@ -468,14 +478,14 @@ class KODAAIDashboard(tk.Tk):
 
         ttk.Label(
             header,
-            text="KODAAI Lokal AI  Güncel Sürüm v0.2",
+            text="KODAAI Lokal AI  GÃ¼ncel SÃ¼rÃ¼m v0.2",
             font=("Segoe UI", 15, "bold"),
         ).pack(anchor="w")
 
         ttk.Label(
             header,
             text=(
-                "Sürüm geçmişi ve önemli teknik değişiklikler"
+                "SÃ¼rÃ¼m geÃ§miÅŸi ve Ã¶nemli teknik deÄŸiÅŸiklikler"
             ),
             font=("Segoe UI", 9),
         ).pack(anchor="w", pady=(4, 8))
@@ -516,7 +526,7 @@ class KODAAIDashboard(tk.Tk):
 
         ttk.Button(
             controls,
-            text="YENİLE",
+            text="YENÄ°LE",
             command=self.refresh_release_history,
         ).pack(side="left")
 
@@ -544,10 +554,10 @@ class KODAAIDashboard(tk.Tk):
         )
 
         headings = {
-            "version": "Sürüm",
+            "version": "SÃ¼rÃ¼m",
             "date": "Tarih",
             "area": "Alan",
-            "change": "Değişiklik",
+            "change": "DeÄŸiÅŸiklik",
             "status": "Durum",
         }
 
@@ -649,7 +659,7 @@ class KODAAIDashboard(tk.Tk):
                     "-",
                     "-",
                     "System",
-                    "release_history.json bulunamadı.",
+                    "release_history.json bulunamadÄ±.",
                     "ERROR",
                 ),
             )
@@ -670,7 +680,7 @@ class KODAAIDashboard(tk.Tk):
                     "-",
                     "-",
                     "System",
-                    f"Sürüm geçmişi okunamadı: {exc}",
+                    f"SÃ¼rÃ¼m geÃ§miÅŸi okunamadÄ±: {exc}",
                     "ERROR",
                 ),
             )
@@ -794,6 +804,316 @@ class KODAAIDashboard(tk.Tk):
         self.telemetry_tab.columnconfigure(
             0,
             weight=1,
+        )
+
+
+    # ---------------------------------------------------------
+    # CONTENT GAPS
+    # ---------------------------------------------------------
+
+    def _build_content_gap_tab(self):
+        controls = ttk.Frame(
+            self.content_gap_tab,
+            padding=(8, 8, 8, 6),
+        )
+        controls.pack(fill="x")
+
+        ttk.Label(
+            controls,
+            textvariable=self.content_gap_summary_var,
+            font=("Segoe UI", 10, "bold"),
+        ).pack(side="left")
+
+        ttk.Button(
+            controls,
+            text="YENILE",
+            command=self.refresh_content_gaps,
+            style="Action.TButton",
+        ).pack(side="right")
+
+        frame = ttk.Frame(
+            self.content_gap_tab,
+            padding=(8, 0, 8, 8),
+        )
+        frame.pack(fill="both", expand=True)
+
+        columns = (
+            "timestamp",
+            "subject",
+            "topic",
+            "question",
+            "score",
+            "sources",
+            "count",
+            "status",
+        )
+
+        self.content_gap_tree = ttk.Treeview(
+            frame,
+            columns=columns,
+            show="headings",
+        )
+
+        headings = {
+            "timestamp": "Zaman",
+            "subject": "Ders",
+            "topic": "Tahmini Konu",
+            "question": "Kullanici Sorusu",
+            "score": "Retrieval",
+            "sources": "Kaynak",
+            "count": "Tekrar",
+            "status": "Durum",
+        }
+
+        widths = {
+            "timestamp": 155,
+            "subject": 120,
+            "topic": 180,
+            "question": 610,
+            "score": 95,
+            "sources": 80,
+            "count": 75,
+            "status": 150,
+        }
+
+        for column in columns:
+            self.content_gap_tree.heading(
+                column,
+                text=headings[column],
+            )
+            self.content_gap_tree.column(
+                column,
+                width=widths[column],
+                anchor="center",
+            )
+
+        self.content_gap_tree.column("question", anchor="w")
+        self.content_gap_tree.column("topic", anchor="w")
+
+        scroll_y = ttk.Scrollbar(
+            frame,
+            orient="vertical",
+            command=self.content_gap_tree.yview,
+        )
+
+        scroll_x = ttk.Scrollbar(
+            frame,
+            orient="horizontal",
+            command=self.content_gap_tree.xview,
+        )
+
+        self.content_gap_tree.configure(
+            yscrollcommand=scroll_y.set,
+            xscrollcommand=scroll_x.set,
+        )
+
+        self.content_gap_tree.grid(
+            row=0,
+            column=0,
+            sticky="nsew",
+        )
+        scroll_y.grid(
+            row=0,
+            column=1,
+            sticky="ns",
+        )
+        scroll_x.grid(
+            row=1,
+            column=0,
+            sticky="ew",
+        )
+
+        frame.rowconfigure(0, weight=1)
+        frame.columnconfigure(0, weight=1)
+
+    def _load_content_gaps(self):
+        if not CONTENT_GAP_FILE.exists():
+            return []
+
+        records = []
+
+        with CONTENT_GAP_FILE.open(
+            "r",
+            encoding="utf-8",
+            errors="replace",
+        ) as handle:
+            for line in handle:
+                line = line.strip()
+
+                if not line:
+                    continue
+
+                try:
+                    record = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+
+                event_name = str(
+                    record.get(
+                        "event",
+                        record.get("event_type", ""),
+                    )
+                ).upper()
+
+                if event_name and event_name != "CONTENT_GAP":
+                    continue
+
+                records.append(record)
+
+        return records
+
+    @staticmethod
+    def _content_gap_group_key(record):
+        question = " ".join(
+            str(record.get("question", "")).split()
+        ).casefold()
+
+        subject = str(
+            record.get("subject", "")
+        ).strip().casefold()
+
+        topic = str(
+            record.get(
+                "topic_guess",
+                record.get("topic", ""),
+            )
+        ).strip().casefold()
+
+        return subject, topic, question
+
+    def refresh_content_gaps(self):
+        if not hasattr(self, "content_gap_tree"):
+            return
+
+        for item in self.content_gap_tree.get_children():
+            self.content_gap_tree.delete(item)
+
+        records = self._load_content_gaps()
+
+        if not records:
+            self.content_gap_summary_var.set(
+                "Icerik acigi: 0 | Bekleyen: 0 | Cozulen: 0"
+            )
+            return
+
+        grouped = {}
+
+        for record in records:
+            key = self._content_gap_group_key(record)
+
+            if key not in grouped:
+                grouped[key] = {
+                    "record": record,
+                    "count": 0,
+                }
+
+            grouped[key]["count"] += 1
+
+            old_ts = str(
+                grouped[key]["record"].get(
+                    "timestamp",
+                    grouped[key]["record"].get("ts", ""),
+                )
+            )
+            new_ts = str(
+                record.get(
+                    "timestamp",
+                    record.get("ts", ""),
+                )
+            )
+
+            if new_ts >= old_ts:
+                grouped[key]["record"] = record
+
+        rows = []
+
+        for item in grouped.values():
+            record = item["record"]
+            count = item["count"]
+
+            timestamp = record.get(
+                "timestamp",
+                record.get("ts", ""),
+            )
+
+            subject = record.get("subject", "")
+            topic = record.get(
+                "topic_guess",
+                record.get("topic", ""),
+            )
+            question = " ".join(
+                str(record.get("question", "")).split()
+            )
+
+            score = record.get(
+                "retrieval_score",
+                record.get("score", ""),
+            )
+            if isinstance(score, (int, float)):
+                score = round(score, 3)
+
+            sources = record.get(
+                "matched_sources",
+                record.get("source_count", ""),
+            )
+            if isinstance(sources, list):
+                sources = len(sources)
+
+            status = str(
+                record.get(
+                    "status",
+                    "PENDING_REVIEW",
+                )
+            ).upper()
+
+            rows.append(
+                (
+                    str(timestamp),
+                    str(subject),
+                    str(topic),
+                    question,
+                    score,
+                    sources,
+                    count,
+                    status,
+                )
+            )
+
+        rows.sort(
+            key=lambda row: row[0],
+            reverse=True,
+        )
+
+        for row in rows:
+            self.content_gap_tree.insert(
+                "",
+                "end",
+                values=row,
+            )
+
+        pending = sum(
+            1
+            for row in rows
+            if row[-1] in (
+                "PENDING_REVIEW",
+                "PENDING",
+            )
+        )
+
+        resolved = sum(
+            1
+            for row in rows
+            if row[-1] == "RESOLVED"
+        )
+
+        total_events = len(records)
+        unique_gaps = len(rows)
+
+        self.content_gap_summary_var.set(
+            f"Icerik acigi olayi: {total_events}   |   "
+            f"Benzersiz acik: {unique_gaps}   |   "
+            f"Bekleyen: {pending}   |   "
+            f"Cozulen: {resolved}"
         )
 
     # ---------------------------------------------------------
@@ -1693,6 +2013,7 @@ class KODAAIDashboard(tk.Tk):
             "Audit Log": "AUDIT",
             "Blocked Queries": "SECURITY",
             "Telemetry Raw": "TELEMETRY",
+            "Content Gaps": "CONTENT_GAP",
         }
 
         component = component_map.get(
@@ -1772,6 +2093,32 @@ class KODAAIDashboard(tk.Tk):
                 )
 
                 level = "BLOCKED"
+
+            elif selected == "Content Gaps":
+                question = record.get("question", "")
+                subject = record.get("subject", "")
+                topic = record.get(
+                    "topic_guess",
+                    record.get("topic", ""),
+                )
+                score = record.get(
+                    "retrieval_score",
+                    record.get("score", ""),
+                )
+                status = record.get(
+                    "status",
+                    "PENDING_REVIEW",
+                )
+
+                message = (
+                    f"Ders: {subject} | "
+                    f"Konu: {topic} | "
+                    f"Retrieval: {score} | "
+                    f"Durum: {status} | "
+                    f"Soru: {question}"
+                )
+
+                level = "GAP"
 
             else:
                 route = record.get(
@@ -1891,6 +2238,7 @@ class KODAAIDashboard(tk.Tk):
 
     def refresh_all(self):
         self.refresh_telemetry()
+        self.refresh_content_gaps()
         self.refresh_http()
         self.refresh_system_log()
 
@@ -1905,3 +2253,4 @@ class KODAAIDashboard(tk.Tk):
 if __name__ == "__main__":
     app = KODAAIDashboard()
     app.mainloop()
+

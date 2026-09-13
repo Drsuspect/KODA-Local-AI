@@ -193,3 +193,246 @@ dialog::backdrop{background:rgba(0,8,18,.75)}.dialog-close{float:right;min-heigh
     margin-right:0;
   }
 }
+
+/* =========================================================
+   KODAAI LOCAL AI - DESKTOP LAYOUT RESTORE
+   ========================================================= */
+
+html,
+body{
+  height:100%;
+  min-height:0;
+  overflow:hidden;
+}
+
+body{
+  width:100%;
+}
+
+.app-shell{
+  height:100vh;
+  min-height:0;
+  overflow:hidden;
+  align-items:stretch;
+}
+
+/* SOL KOLON */
+.sidebar{
+  position:relative;
+  top:auto;
+  height:100%;
+  min-height:0;
+}
+
+/* ORTA ÇALIŞMA ALANI */
+.main{
+  height:100%;
+  min-height:0;
+  overflow-y:auto;
+  overflow-x:hidden;
+  scrollbar-width:thin;
+}
+
+/* SAĞ KOLON */
+.right-rail{
+  height:100%;
+  min-height:0;
+  padding-top:75px;
+  padding-bottom:0;
+  overflow:hidden;
+}
+
+/* Sağ kart kalan yüksekliği kullansın */
+.rail-card{
+  flex:1;
+  min-height:0;
+  display:flex;
+  flex-direction:column;
+}
+
+/* Sürüm alanını sağ kolonun tabanına taşı */
+.version-history-card{
+  margin-top:auto;
+  padding-top:14px;
+  border-top:1px solid #21425f;
+}
+
+/* Sürüm başlığı */
+.version-history-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:10px;
+}
+
+.version-history-head h3{
+  margin:4px 0 0;
+  font-size:13px;
+  color:#eef6ff;
+}
+
+.version-kicker{
+  display:block;
+  color:#34dfff;
+  font-size:9px;
+  font-weight:800;
+  letter-spacing:.08em;
+}
+
+.version-badge{
+  flex:0 0 auto;
+  padding:4px 7px;
+  border:1px solid #336d99;
+  border-radius:999px;
+  background:#0b2d49;
+  color:#52e6ff;
+  font-size:9px;
+  font-weight:800;
+}
+
+/* Sürüm maddeleri */
+.version-summary{
+  margin:10px 0 11px;
+  padding-left:15px;
+  color:#c8d6e4;
+}
+
+.version-summary li{
+  margin:5px 0;
+  font-size:10px;
+  line-height:1.35;
+}
+
+/* Sürüm detay düğmesi */
+.version-details-btn{
+  width:100%;
+  min-height:auto;
+  border:1px solid #256da4;
+  border-radius:10px;
+  background:#0c3150;
+  color:#dff6ff;
+  padding:8px 10px;
+  text-align:center;
+  font-size:10px;
+  font-weight:700;
+  cursor:pointer;
+}
+
+.version-details-btn:hover{
+  background:#114267;
+  border-color:#32a9e8;
+}
+
+/* Sol ve sağ alt blokların tabana oturması */
+.control-note{
+  margin-top:auto;
+}
+
+/* KODAAI - Right rail compact alignment */
+
+.right-rail{
+  padding-top:28px;
+  gap:12px;
+}
+
+.vision{
+  padding-left:11px;
+}
+
+.vision strong{
+  font-size:16px;
+  line-height:1.25;
+}
+
+.vision small{
+  margin-top:7px;
+  font-size:10px;
+}
+
+.rail-card{
+  padding:13px;
+}
+
+
+/* KODAAI - Right rail final compact tune */
+
+.right-rail{
+  padding-top:12px;
+  gap:10px;
+}
+
+.vision strong{
+  font-size:15px;
+  line-height:1.2;
+}
+
+.vision small{
+  margin-top:5px;
+  font-size:9px;
+}
+
+
+/* KODAAI - scope block vertical tune */
+
+.rail-card h3{
+  margin-top:6px;
+  margin-bottom:10px;
+}
+
+.subjects{
+  margin-top:0;
+}
+
+
+/* KODAAI - version block vertical tune */
+
+.version-history-card{
+  margin-top:10px;
+  padding-top:10px;
+}
+
+
+/* KODAAI - scope block vertical tune */
+
+.rail-card h3{
+  margin-top:6px;
+  margin-bottom:10px;
+}
+
+.subjects{
+  margin-top:0;
+}
+
+
+/* KODAAI - right rail final vertical tightening */
+
+.rail-card h3{
+  margin-top:-4px;
+  margin-bottom:8px;
+}
+
+.subjects{
+  margin-bottom:0;
+}
+
+.rail-card > hr{
+  margin:8px 0;
+}
+
+.version-history-card{
+  margin-top:0;
+  padding-top:6px;
+}
+
+.version-summary{
+  margin-top:7px;
+  margin-bottom:7px;
+}
+
+
+/* KODAAI - version card final upward nudge */
+
+.version-history-card{
+  transform:translateY(-10px);
+}
+

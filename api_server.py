@@ -1,54 +1,143 @@
+﻿from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
+import json
+import time
+import threading
+import os
+import re
+import unicodedata
+from datetime import datetime
 from typing import Dict, Optional
 import shutil
 
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, UploadFile, File, Header, HTTPException
 from pydantic import BaseModel, Field
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
+from dotenv import load_dotenv
 
-from llm_core.local_model import LocalLLM
+from llm_core.local_model import LocalLLM, GenerationCancelled
 from audit.audit_logger import AuditLogger
+from audit.telemetry_logger import TelemetryLogger
 from security.prompt_guard import PromptGuard
 
 from rag.document_loader import DocumentLoader
 from rag.chunker import TextChunker
 from rag.chroma_retriever import ChromaRetriever
 from common.text_cleaner import clean_llm_output
+from common.accessibility_formatter import to_accessible_speech
+from services.routing_language_service import RoutingLanguageService
+from services.direct_knowledge_service import DirectKnowledgeService
+from services.direct_answer_composer import compose_direct_answer
 
+
+load_dotenv()
 
 APP_VERSION = "0.1.0"
 DOCS_DIR = Path("data/documents")
+CONTENT_GAP_FILE = Path(__file__).resolve().parent / "logs" / "content_gap.jsonl"
+
+EDUCATION_DOCS_DIR = (
+    Path(__file__).resolve().parent.parent
+    / "01_KODA_Education_Platform"
+    / "kodaai"
+    / "data"
+    / "output"
+    / "license"
+)
 DOCS_DIR.mkdir(exist_ok=True)
 
 ALLOWED_DOCUMENT_EXTENSIONS = {
     ".txt",
     ".pdf",
     ".docx",
+    ".json",
 }
 
 
 app = FastAPI(
     title="KODA Local AI API",
     version=APP_VERSION,
-    description="Local-first experimental RAG-powered Turkish LLM runtime."
+    description="Local-first experimental RAG-powered Turkish LLM runtime.",
+    docs_url=None,
+    redoc_url=None,
+    openapi_url=None,
 )
+
+WEB_DIR = Path(__file__).resolve().parent / "web"
+
+app.mount(
+    "/static",
+    StaticFiles(directory=WEB_DIR),
+    name="static",
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://127.0.0.1:5500"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+@app.get("/", include_in_schema=False)
+def local_ai_ui():
+    return FileResponse(WEB_DIR / "index.html")
+
+@app.middleware("http")
+async def telemetry_exception_middleware(request, call_next):
+    started_at = time.perf_counter()
+
+    try:
+        return await call_next(request)
+
+    except Exception as exc:
+        if request.url.path == "/ask":
+            telemetry.log_request(
+                request_id=telemetry.new_request_id(),
+                route="ERROR",
+                duration_ms=(time.perf_counter() - started_at) * 1000,
+                source_count=0,
+                used_context=False,
+                success=False,
+                blocked=False,
+                subject=None,
+                accessibility_layer="NONE",
+                error=type(exc).__name__,
+            )
+
+        raise
+
 
 
 class AskRequest(BaseModel):
     question: str
     user_role: str = "research"
+    session_id: str | None = None
+    client_request_id: str | None = None
+
+
+class StopTelemetryRequest(BaseModel):
+    request_id: str
+    session_id: str | None = None
+    stop_after_ms: float | None = None
 
 
 class SourceItem(BaseModel):
-    source: str
+    file_name: str
+    content_type: str | None = None
+    subject: str | None = None
     chunk_id: int | str
     similarity: float
 
 
 class AskResponse(BaseModel):
     answer: str
+    answer_speech: str | None = None
     used_context: bool
-    context: str | None = None
     sources: list[SourceItem] = Field(default_factory=list)
+    process_steps: list[str] = Field(default_factory=list)
     blocked: bool = False
     reason: str | None = None
 
@@ -78,15 +167,72 @@ class TutorExplainResponse(BaseModel):
 
 
 audit = AuditLogger()
+telemetry = TelemetryLogger()
 guard = PromptGuard()
+routing_language = RoutingLanguageService()
+direct_knowledge = DirectKnowledgeService()
+
+_active_generations_lock = threading.Lock()
+_active_generations = {}
+
+
+def begin_generation(session_id: str | None):
+    if not session_id:
+        return threading.Event()
+
+    with _active_generations_lock:
+        previous = _active_generations.get(session_id)
+
+        if previous is not None:
+            previous.set()
+
+        current = threading.Event()
+        _active_generations[session_id] = current
+
+        return current
+
+
+def cancel_generation(session_id: str | None):
+    if not session_id:
+        return False
+
+    with _active_generations_lock:
+        current = _active_generations.get(session_id)
+
+        if current is None:
+            return False
+
+        current.set()
+        return True
+
+
+def finish_generation(
+    session_id: str | None,
+    cancel_event
+):
+    if not session_id:
+        return
+
+    with _active_generations_lock:
+        current = _active_generations.get(session_id)
+
+        if current is cancel_event:
+            _active_generations.pop(session_id, None)
+
 
 loader = DocumentLoader(docs_dir=str(DOCS_DIR))
 documents = loader.load_documents()
 
+for education_subdir in ("reading", "quiz", "exam"):
+    education_loader = DocumentLoader(
+        docs_dir=str(EDUCATION_DOCS_DIR / education_subdir)
+    )
+    documents += education_loader.load_documents()
+
 chunker = TextChunker(chunk_size=600, overlap=100)
 chunks = chunker.chunk_documents(documents)
 
-retriever = ChromaRetriever(chunks)
+retriever = ChromaRetriever([])
 
 llm = LocalLLM(
     model_name="gemma3:4b",
@@ -94,11 +240,352 @@ llm = LocalLLM(
 )
 
 
+SUBJECT_KEYWORDS = {
+    "cografya": (
+        "coğrafya",
+        "doğu anadolu",
+        "batı anadolu",
+        "iç anadolu",
+        "marmara",
+        "ege bölgesi",
+        "akdeniz bölgesi",
+        "karadeniz bölgesi",
+        "güneydoğu anadolu",
+        "iklim",
+        "masif",
+        "jeoloji",
+        "jeolojik",
+        "jeomorfoloji",
+        "jeomorfolojik",
+        "kayaç",
+        "tektonik",
+        "yeryüzü şekilleri",
+        "nüfus",
+        "yerleşme",
+        "göç",
+    ),
+    "tarih": (
+        "tarih",
+        "osmanlı",
+        "selçuklu",
+        "atatürk",
+        "kurtuluş savaşı",
+        "milli mücadele",
+        "inkılap",
+        "birinci dünya savaşı",
+        "ikinci dünya savaşı",
+        "ii. dünya savaşı",
+        "i. dünya savaşı",
+        "i dünya savaşı",
+        "ii dünya savaşı",
+    ),
+    "matematik": (
+        "matematik",
+        "denklem",
+        "kesir",
+        "yüzde",
+        "oran",
+        "orantı",
+        "üslü",
+        "köklü",
+        "geometri",
+        "fonksiyon",
+        "eşitsizlik",
+        "olasılık",
+        "ifade",
+        "işlem",
+        "denklem",
+        "eşitlik",
+        "eşitsizlik",
+    ),
+    "turkce": (
+        "türkçe",
+        "paragraf",
+        "sözcük",
+        "cümle",
+        "fiilimsi",
+        "anlatım bozukluğu",
+        "noktalama",
+        "yazım",
+    ),
+    "vatandaslik": (
+        "vatandaşlık",
+        "anayasa",
+        "tbmm",
+        "hukuk",
+        "yargı",
+        "yasama",
+        "yürütme",
+        "seçim",
+        "siyasi parti",
+    ),
+}
+
+
+
+def log_content_gap(
+    *,
+    question: str,
+    subject: str | None,
+    topic_guess: str | None,
+    retrieval_score: float,
+    matched_sources: int,
+    request_id: str | None = None,
+    session_id: str | None = None,
+) -> bool:
+    """
+    Append one curriculum content-gap event to logs/content_gap.jsonl.
+
+    This logger is deliberately fail-safe: telemetry/logging must never
+    break the user's /ask request path.
+    """
+    if not subject or subject not in SUBJECT_KEYWORDS:
+        return False
+
+    record = {
+        "timestamp": datetime.now().astimezone().isoformat(timespec="seconds"),
+        "event": "CONTENT_GAP",
+        "question": question,
+        "subject": subject,
+        "topic_guess": topic_guess or "",
+        "curriculum_scope": True,
+        "retrieval_score": round(float(retrieval_score), 3),
+        "matched_sources": int(matched_sources),
+        "status": "PENDING_REVIEW",
+        "request_id": request_id,
+        "session_id": session_id,
+    }
+
+    try:
+        CONTENT_GAP_FILE.parent.mkdir(parents=True, exist_ok=True)
+
+        with CONTENT_GAP_FILE.open(
+            "a",
+            encoding="utf-8",
+        ) as handle:
+            handle.write(
+                json.dumps(
+                    record,
+                    ensure_ascii=False,
+                )
+                + "\n"
+            )
+
+        return True
+
+    except Exception:
+        # Content-gap logging is observational only.
+        # Never interrupt the answer pipeline because the log could not be written.
+        return False
+
+def detect_subject(question: str) -> str | None:
+    normalized = question.casefold()
+
+    # Açık matematiksel gösterimler.
+    # "/" tek başına kullanılmaz; böylece URL'ler matematik olarak algılanmaz.
+    math_symbols = ("=", "+", "-", "*", "×", "÷", "≤", "≥", "<", ">", "√", "²", "³", "%")
+
+    if any(symbol in question for symbol in math_symbols):
+        return "matematik"
+
+    # Kesir biçimi: 3/4, 12 / 5 gibi.
+    if re.search(r"\b\d+\s*/\s*\d+\b", question):
+        return "matematik"
+
+    matches = []
+
+    for subject, keywords in SUBJECT_KEYWORDS.items():
+        score = sum(
+            1 for keyword in keywords
+            if keyword.casefold() in normalized
+        )
+
+        if score:
+            matches.append((score, subject))
+
+    if not matches:
+        return None
+
+    matches.sort(reverse=True)
+
+    best_score, best_subject = matches[0]
+
+    if len(matches) > 1 and matches[0][0] == matches[1][0]:
+        return None
+
+    return best_subject
+
+def _normalize_answerability_text(text: str) -> list[str]:
+    text = text.casefold()
+
+    turkish_map = str.maketrans({
+        "\u0131": "i",
+        "\u011f": "g",
+        "\u00fc": "u",
+        "\u015f": "s",
+        "\u00f6": "o",
+        "\u00e7": "c",
+    })
+    text = text.translate(turkish_map)
+
+    text = unicodedata.normalize("NFKD", text)
+    text = "".join(
+        char for char in text
+        if not unicodedata.combining(char)
+    )
+
+    return re.findall(r"[a-z0-9]+", text)
+
+
+def is_context_answerable(question: str, context: str) -> tuple[bool, float]:
+    if not context.strip():
+        return False, 0.0
+
+    stop_words = {
+        "ve", "veya", "ile", "bir", "bu", "su",
+        "nedir", "nelerdir", "neler", "hangileri", "hangileridir", "say", "acikla", "anlat",
+        "hakkinda", "icin", "olan", "olarak",
+        "mi", "midir", "dir",
+        "nin", "nın", "nun", "nün",
+        "ni", "nı", "nu", "nü", "deki", "daki", "teki", "taki",
+    }
+
+    question_words = [
+        word
+        for word in _normalize_answerability_text(question)
+        if len(word) > 2 and word not in stop_words
+    ]
+
+    if not question_words:
+        return True, 1.0
+
+    context_words = set(_normalize_answerability_text(context))
+
+    def supported(word: str) -> bool:
+        if word in context_words:
+            return True
+
+        if len(word) >= 5:
+            prefix = word[:5]
+            return any(
+                len(candidate) >= 5 and candidate.startswith(prefix)
+                for candidate in context_words
+            )
+
+        return False
+
+    matched = sum(1 for word in question_words if supported(word))
+    coverage = matched / len(question_words)
+
+    return coverage >= 0.50, round(coverage, 3)
+
+
+def has_required_answer_evidence(question: str, context: str) -> tuple[bool, str]:
+    """
+    Soru yalnızca konu benzerliği değil, belirli bir bilgi türü istiyorsa
+    bağlamın o bilgi türünü gerçekten içerip içermediğini kontrol eder.
+    """
+
+    q_words = _normalize_answerability_text(question)
+    c_words = _normalize_answerability_text(context)
+
+    q_text = " ".join(q_words)
+    c_text = " ".join(c_words)
+
+    # Görev / yetki / işlev soruları
+    duty_intent = any(
+        token in q_text
+        for token in (
+            "gorev",
+            "gorevleri",
+            "yetki",
+            "yetkileri",
+            "islev",
+            "islevi",
+            "ne ise yarar",
+        )
+    )
+
+    if duty_intent:
+        duty_evidence_patterns = (
+            r"\bgorevi\b",
+            r"\bgorevleri\b",
+            r"\bgorevidir\b",
+            r"\bgorevleridir\b",
+            r"\byetkisi\b",
+            r"\byetkileri\b",
+            r"\bsorumludur\b",
+            r"\byukumludur\b",
+            r"\binceler\b",
+            r"\barastirir\b",
+            r"\bdenetler\b",
+            r"\bdegerlendirir\b",
+            r"\bsonuclandirir\b",
+            r"\btavsiyede\s+bulunur\b",
+            r"\bkarar\s+verir\b",
+            r"\byerine\s+getirir\b",
+            r"\bbasvuru(?:yu|lari|lar)?\s+(?:inceler|degerlendirir|sonuclandirir)\b",
+        )
+
+        if not any(
+            re.search(pattern, c_text)
+            for pattern in duty_evidence_patterns
+        ):
+            return False, "DUTY_EVIDENCE_MISSING"
+
+    # Zaman soruları
+    time_intent = any(
+        token in q_text
+        for token in (
+            "ne zaman",
+            "hangi yil",
+            "hangi tarihte",
+            "kac yil",
+        )
+    )
+
+    if time_intent:
+        if not re.search(r"\b(1[0-9]{3}|20[0-9]{2})\b", c_text):
+            return False, "TIME_EVIDENCE_MISSING"
+
+    # Neden / sebep soruları
+    reason_intent = any(
+        token in q_text
+        for token in (
+            "neden",
+            "nicin",
+            "sebebi",
+            "sebep",
+        )
+    )
+
+    if reason_intent:
+        reason_markers = (
+            "cunku",
+            "nedeni",
+            "sebebi",
+            "sonuc",
+            "dolayi",
+            "amac",
+        )
+
+        if not any(marker in c_text for marker in reason_markers):
+            return False, "REASON_EVIDENCE_MISSING"
+
+    return True, "OK"
+
+
 def rebuild_retriever(reset_collection: bool = True):
     global documents, chunks, retriever
 
     loader = DocumentLoader(docs_dir=str(DOCS_DIR))
     documents = loader.load_documents()
+
+    for education_subdir in ("reading", "quiz", "exam"):
+        education_loader = DocumentLoader(
+            docs_dir=str(EDUCATION_DOCS_DIR / education_subdir)
+        )
+        documents += education_loader.load_documents()
 
     chunker = TextChunker(chunk_size=600, overlap=100)
     chunks = chunker.chunk_documents(documents)
@@ -178,7 +665,7 @@ Cevap formatı:
 def health():
     return {
         "status": "ok",
-        "system": "KODA Local AI",
+        "system": "KODAAI Local AI",
         "version": APP_VERSION,
         "documents": len(documents),
         "chunks": len(chunks),
@@ -203,16 +690,71 @@ def sources():
     }
 
 
+@app.post("/telemetry/stop")
+def telemetry_stop(request: StopTelemetryRequest):
+    cancel_generation(request.session_id)
+
+    telemetry.log_stop(
+        request_id=request.request_id,
+        stop_after_ms=request.stop_after_ms,
+        session_id=request.session_id,
+    )
+
+    return {"status": "logged"}
+
+
 @app.post("/ask", response_model=AskResponse)
-def ask(request: AskRequest):
+def ask(
+    request: AskRequest,
+    x_kodaai_api_key: str | None = Header(
+        default=None,
+        alias="X-KODAAI-API-Key",
+    ),
+):
+    expected_key = os.getenv("KODAAI_API_KEY")
+
+    if not expected_key:
+        raise HTTPException(
+            status_code=503,
+            detail="API authentication is not configured.",
+        )
+
+    if x_kodaai_api_key != expected_key:
+        raise HTTPException(
+            status_code=401,
+            detail="Unauthorized.",
+        )
+    request_id = request.client_request_id or telemetry.new_request_id()
+    started_at = time.perf_counter()
+
     question = request.question.strip()
 
     if not question:
+        telemetry.log_request(
+            request_id=request_id,
+            question=question,
+            route="INVALID_REQUEST",
+            duration_ms=(time.perf_counter() - started_at) * 1000,
+            source_count=0,
+            used_context=False,
+            success=False,
+            blocked=False,
+            session_id=request.session_id,
+            subject=None,
+            accessibility_layer="NONE",
+            error="empty_question",
+        )
+
         return AskResponse(
             answer="Soru boş olamaz.",
             used_context=False,
             sources=[]
         )
+
+    process_steps = [
+        "Soru alındı",
+        "Güvenlik kontrolü yapılıyor"
+    ]
 
     safety_result = guard.check(question)
 
@@ -220,6 +762,18 @@ def ask(request: AskRequest):
         audit.log_blocked_query(
             question=question,
             reason=safety_result["reason"]
+        )
+
+        telemetry.log_request(
+            request_id=request_id,
+            question=question,
+            route="BLOCKED",
+            duration_ms=(time.perf_counter() - started_at) * 1000,
+            source_count=0,
+            used_context=False,
+            success=True,
+            blocked=True,
+            session_id=request.session_id,
         )
 
         return AskResponse(
@@ -230,17 +784,497 @@ def ask(request: AskRequest):
             reason=safety_result["reason"]
         )
 
-    retrieval_result = retriever.retrieve_with_sources(question)
+    process_steps.append("KODAAI bilgi kaynakları taranıyor")
+
+    # KODAAI Math Engine
+    # Explicit arithmetic expressions are solved deterministically
+    # before RAG/LLM retrieval. Non-math questions continue normally.
+    from math_engine.service import MathService
+
+    math_result = MathService().handle(question)
+
+    if math_result.handled:
+        process_steps.append(
+            "Matematiksel ifade KODAAI Math Engine tarafından çözüldü"
+        )
+
+        if math_result.steps:
+            process_steps.extend(
+                math_result.steps
+            )
+
+        if math_result.verified is True:
+            process_steps.append(
+                "Çözüm matematiksel olarak doğrulandı"
+            )
+
+        math_answer = math_result.answer or ""
+
+        process_steps.append(
+            "Reading / MathSpeak erişilebilirlik katmanı uygulanıyor"
+        )
+
+        math_answer_speech = to_accessible_speech(
+            math_answer
+        )
+
+        process_steps.append(
+            "Yanıt hazır"
+        )
+
+        telemetry.log_request(
+            request_id=request_id,
+            question=question,
+            route="MATH",
+            duration_ms=(time.perf_counter() - started_at) * 1000,
+            source_count=0,
+            used_context=False,
+            success=True,
+            blocked=False,
+            session_id=request.session_id,
+            subject="matematik",
+            accessibility_layer="READING_MATHSPEAK",
+        )
+
+        audit.log_interaction(
+            question=question,
+            response=math_answer,
+            user_role=request.user_role
+        )
+
+        return AskResponse(
+            answer=math_answer,
+            answer_speech=math_answer_speech,
+            used_context=False,
+            sources=[],
+            process_steps=process_steps
+        )
+
+    # ------------------------------------------------------
+    # KODAAI Direct Knowledge Layer
+    # Deterministic indexed knowledge lookup before RAG/LLM.
+    # ------------------------------------------------------
+
+    direct_result = direct_knowledge.search(
+        question,
+        limit=3,
+    )
+
+    direct_answerable = bool(
+        direct_result.get("answerable")
+    )
+
+    direct_confidence = float(
+        direct_result.get(
+            "direct_confidence"
+        ) or 0.0
+    )
+
+    direct_passage = direct_result.get(
+        "best_passage"
+    )
+
+    if (
+        direct_answerable
+        and direct_confidence >= 0.90
+        and direct_passage
+    ):
+        direct_passage_text = str(
+            direct_passage.get("text") or ""
+        ).strip()
+
+        direct_answer = compose_direct_answer(
+            question=question,
+            passage=direct_passage_text,
+            intent=str(
+                direct_result.get("intent") or "fact"
+            ),
+        )
+
+        if direct_answer:
+            process_steps.append(
+                "Direct Knowledge e\u015fle\u015fmesi: "
+                + str(
+                    direct_result.get(
+                        "route_key"
+                    )
+                )
+            )
+
+            process_steps.append(
+                "Direct Knowledge g\u00fcven skoru: "
+                + f"{direct_confidence:.3f}"
+            )
+
+            process_steps.append(
+                "Yerel indeks \u00fczerinden do\u011frudan yan\u0131tland\u0131"
+            )
+
+            process_steps.append(
+                "Reading / MathSpeak eri\u015filebilirlik katman\u0131 uygulan\u0131yor"
+            )
+
+            direct_answer_speech = (
+                to_accessible_speech(
+                    direct_answer
+                )
+            )
+
+            process_steps.append(
+                "Yan\u0131t haz\u0131r"
+            )
+
+            direct_file = str(
+                direct_passage.get(
+                    "file_path"
+                ) or ""
+            )
+
+            direct_sources = [
+                {
+                    "file_name": (
+                        Path(direct_file).name
+                        if direct_file
+                        else ""
+                    ),
+                    "content_type": direct_passage.get(
+                        "content_type"
+                    ),
+                    "subject": direct_passage.get(
+                        "subject"
+                    ),
+                    "chunk_id": "direct",
+                    "similarity": direct_confidence,
+                }
+            ]
+
+            telemetry.log_request(
+                request_id=request_id,
+            question=question,
+                route="DIRECT_KNOWLEDGE",
+                duration_ms=(
+                    time.perf_counter()
+                    - started_at
+                ) * 1000,
+                source_count=1,
+                used_context=True,
+                success=True,
+                blocked=False,
+                session_id=request.session_id,
+                subject=direct_result.get(
+                    "subject"
+                ),
+                accessibility_layer="READING_MATHSPEAK",
+            )
+
+            audit.log_interaction(
+                question=question,
+                response=direct_answer,
+                user_role=request.user_role
+            )
+
+            return AskResponse(
+                answer=direct_answer,
+                answer_speech=direct_answer_speech,
+                used_context=True,
+                sources=direct_sources,
+                process_steps=process_steps,
+            )
+
+    subject = detect_subject(question)
+
+    # KODAAI Language Layer
+    # morphology -> canonical -> KRI route hint
+    route_analysis = routing_language.analyse(question)
+
+    route_items = route_analysis.get("routes", [])
+
+    preferred_files = set()
+    routing_subject = subject
+
+    if len(route_items) == 1:
+        route_item = route_items[0]
+
+        route_subject = route_item.get("subject")
+
+        if route_subject:
+            routing_subject = route_subject
+
+        route_paths = route_item.get("paths") or {}
+
+        for group in ("reading", "quiz"):
+            for route_path in route_paths.get(group, []) or []:
+                preferred_files.add(
+                    Path(route_path).name
+                )
+
+        process_steps.append(
+            "KRI yönlendirmesi: "
+            + str(route_item.get("route_key"))
+            + "  "
+            + str(route_item.get("title"))
+        )
+
+    retrieval_result = retriever.retrieve_with_sources(
+        question,
+        subject=routing_subject,
+        preferred_files=preferred_files,
+    )
+
+    subject = routing_subject
 
     context = retrieval_result["context"]
     source_items = retrieval_result["sources"]
 
-    raw_answer = llm.generate(
-        question=question,
-        context=context
+    public_sources = []
+
+    for item in source_items:
+        source_path = item.get("source", "")
+
+        public_sources.append(
+            {
+                "file_name": Path(source_path).name if source_path else "",
+                "content_type": item.get("content_type"),
+                "subject": item.get("subject"),
+                "chunk_id": item.get("chunk_id"),
+                "similarity": item.get("similarity"),
+            }
+        )
+
+    process_steps.append(
+        f"{len(source_items)} kaynak bulundu"
+        if source_items
+        else "?lgili kaynak bulunamad?"
     )
 
-    answer = clean_llm_output(raw_answer)
+    answerability_queries = [question]
+
+    lemma_query = str(
+        route_analysis.get("lemma_text") or ""
+    ).strip()
+
+    if (
+        lemma_query
+        and lemma_query.casefold() != question.casefold()
+    ):
+        answerability_queries.append(lemma_query)
+
+    canonical_terms = [
+        str(item).replace("_", " ").strip()
+        for item in (route_analysis.get("canonical") or [])
+        if str(item).strip()
+    ]
+
+    # KRI tek ve kesin bir route verdi?inde canonical kavramlar
+    # answerability i?in g?venli ek sinyal olarak kullan?labilir.
+    if len(route_items) == 1 and canonical_terms:
+        answerability_queries.append(
+            " ".join(canonical_terms)
+        )
+
+        route_title = str(
+            route_items[0].get("title") or ""
+        ).strip()
+
+        if route_title:
+            answerability_queries.append(
+                route_title
+            )
+
+    chunk_scores = []
+    primary_scores = []
+    auxiliary_scores = []
+
+    if context:
+        for chunk in context.split("\n\n---\n\n"):
+            _, primary_coverage = is_context_answerable(
+                question,
+                chunk,
+            )
+
+            evidence_ok, evidence_reason = has_required_answer_evidence(
+                question,
+                chunk,
+            )
+
+            effective_primary_coverage = (
+                primary_coverage
+                if evidence_ok
+                else 0.0
+            )
+
+            aux_coverages = []
+
+            for answerability_query in answerability_queries:
+                if (
+                    answerability_query.strip().casefold()
+                    == question.strip().casefold()
+                ):
+                    continue
+
+                _, aux_coverage = is_context_answerable(
+                    answerability_query,
+                    chunk,
+                )
+                aux_coverages.append(aux_coverage)
+
+            best_aux = (
+                max(aux_coverages)
+                if aux_coverages
+                else 0.0
+            )
+
+            primary_scores.append(effective_primary_coverage)
+            auxiliary_scores.append(best_aux)
+
+            combined_score = (
+                effective_primary_coverage * 0.85
+                + best_aux * 0.15
+            )
+
+            chunk_scores.append(combined_score)
+
+    best_primary_coverage = (
+        max(primary_scores)
+        if primary_scores
+        else 0.0
+    )
+
+    best_auxiliary_coverage = (
+        max(auxiliary_scores)
+        if auxiliary_scores
+        else 0.0
+    )
+
+    best_coverage = (
+        max(chunk_scores)
+        if chunk_scores
+        else 0.0
+    )
+
+    process_steps.append(
+        f"Kaynak yeterlilik skoru: {best_coverage:.3f}"
+    )
+    process_steps.append(
+        f"Ana soru kapsama skoru: {best_primary_coverage:.3f}"
+    )
+    process_steps.append(
+        f"Yardimci sorgu kapsama skoru: {best_auxiliary_coverage:.3f}"
+    )
+
+    if best_primary_coverage < 0.60 or best_coverage < 0.60:
+        telemetry_route = "RAG_NO_ANSWER"
+        process_steps.append(
+            "Kaynak yeterliliği yetersiz"
+        )
+
+        topic_guess = ""
+
+        if len(route_items) == 1:
+            topic_guess = str(
+                route_items[0].get("title") or ""
+            ).strip()
+
+        if not topic_guess and canonical_terms:
+            topic_guess = ", ".join(canonical_terms[:3])
+
+        gap_logged = log_content_gap(
+            question=question,
+            subject=subject,
+            topic_guess=topic_guess,
+            retrieval_score=best_coverage,
+            matched_sources=len(source_items),
+            request_id=request_id,
+            session_id=request.session_id,
+        )
+
+        if gap_logged:
+            process_steps.append(
+                "Müfredat içi içerik açığı inceleme kuyruğuna kaydedildi"
+            )
+
+        answer = (
+            "Mevcut bilgi kaynaklarımda bu soruyu "
+            "yeterli doğrulukta yanıtlayacak bilgi bulunamadı."
+        )
+    else:
+        telemetry_route = "LLM"
+        process_steps.append(
+            "Yerel yapay zekâ yanıtı oluşturuyor"
+        )
+
+        cancel_event = begin_generation(
+            request.session_id
+        )
+
+        try:
+            raw_answer = llm.generate(
+                question=question,
+                context=context,
+                cancel_event=cancel_event
+            )
+
+        except GenerationCancelled:
+            telemetry.log_request(
+                request_id=request_id,
+            question=question,
+                route="CANCELLED",
+                duration_ms=(
+                    time.perf_counter() - started_at
+                ) * 1000,
+                source_count=len(source_items),
+                used_context=bool(context),
+                success=True,
+                blocked=False,
+                session_id=request.session_id,
+                subject=subject,
+                accessibility_layer="NONE",
+            )
+
+            return AskResponse(
+                answer="Yan?t durduruldu.",
+                answer_speech=None,
+                used_context=False,
+                sources=[],
+                process_steps=[
+                    "Yan?t kullan?c? taraf?ndan durduruldu"
+                ],
+                blocked=False,
+                reason=None
+            )
+
+        finally:
+            finish_generation(
+                request.session_id,
+                cancel_event
+            )
+
+        answer = clean_llm_output(
+            raw_answer,
+            question=question
+        )
+
+    process_steps.append(
+        "Reading / MathSpeak erişilebilirlik katmanı uygulanıyor"
+    )
+
+    answer_speech = to_accessible_speech(answer)
+
+    process_steps.append("Yanıt hazır")
+
+    telemetry.log_request(
+        request_id=request_id,
+            question=question,
+        route=telemetry_route,
+        duration_ms=(time.perf_counter() - started_at) * 1000,
+        source_count=len(source_items),
+        used_context=bool(context),
+        success=True,
+        blocked=False,
+        session_id=request.session_id,
+        subject=subject,
+        accessibility_layer="READING_MATHSPEAK",
+    )
 
     audit.log_interaction(
         question=question,
@@ -250,11 +1284,28 @@ def ask(request: AskRequest):
 
     return AskResponse(
         answer=answer,
+        answer_speech=answer_speech,
         used_context=bool(context),
-        context=context if context else None,
-        sources=source_items,
+        sources=public_sources,
+        process_steps=process_steps,
         blocked=False,
         reason=None
+    )
+
+
+@app.post("/api/chat", response_model=AskResponse, include_in_schema=False)
+def public_chat(request: AskRequest):
+    internal_key = os.getenv("KODAAI_API_KEY")
+
+    if not internal_key:
+        raise HTTPException(
+            status_code=503,
+            detail="API authentication is not configured.",
+        )
+
+    return ask(
+        request,
+        x_kodaai_api_key=internal_key,
     )
 
 
@@ -408,3 +1459,42 @@ def delete_document(file_name: str):
         "file_name": safe_name,
         "message": "Dosya silindi. ChromaDB güncellemesi için /reindex çalıştır."
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

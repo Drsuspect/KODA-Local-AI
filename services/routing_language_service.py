@@ -98,7 +98,7 @@ class RoutingLanguageService:
     def canonicalize_text(self, text: str):
         normalized = normalize_text(text)
 
-        found = []
+        matches = []
 
         for variant, canonical in self.lookup:
             pattern = (
@@ -107,9 +107,72 @@ class RoutingLanguageService:
                 + r"\b"
             )
 
-            if re.search(pattern, normalized):
-                if canonical not in found:
-                    found.append(canonical)
+            for match in re.finditer(
+                pattern,
+                normalized
+            ):
+                matches.append({
+                    "start": match.start(),
+                    "end": match.end(),
+                    "variant": variant,
+                    "canonical": canonical,
+                    "word_count": len(
+                        variant.split()
+                    ),
+                })
+
+        # Daha uzun / daha spesifik synonym once.
+        matches.sort(
+            key=lambda item: (
+                item["word_count"],
+                item["end"] - item["start"],
+            ),
+            reverse=True,
+        )
+
+        selected = []
+
+        for candidate in matches:
+            contained_by_more_specific = False
+
+            for chosen in selected:
+                contained = (
+                    candidate["start"]
+                    >= chosen["start"]
+                    and candidate["end"]
+                    <= chosen["end"]
+                )
+
+                strictly_more_specific = (
+                    chosen["word_count"]
+                    > candidate["word_count"]
+                    or (
+                        chosen["end"]
+                        - chosen["start"]
+                    )
+                    > (
+                        candidate["end"]
+                        - candidate["start"]
+                    )
+                )
+
+                if (
+                    contained
+                    and strictly_more_specific
+                ):
+                    contained_by_more_specific = True
+                    break
+
+            if not contained_by_more_specific:
+                selected.append(candidate)
+
+        found = []
+
+        for item in selected:
+            canonical = item["canonical"]
+
+            if canonical not in found:
+                found.append(canonical)
 
         return found
 
@@ -125,17 +188,55 @@ class RoutingLanguageService:
 
         lemma_text = " ".join(lemmas)
 
-        canonical = []
+        # Once kullanicinin gercek soru metnini kullan.
+        #
+        # Morphology / lemma sadece surface text hicbir
+        # canonical bulamazsa fallback olarak devreye girer.
+        #
+        # Bu sayede:
+        #
+        #   "Rasyonel sayi nedir?"
+        #
+        # surface text -> rasyonel_sayilar
+        #
+        # iken lemma tarafindaki "rasyonel say" generic
+        # "sayi" route'unu tekrar sisteme sokamaz.
+        canonical = self.canonicalize_text(
+            question
+        )
 
-        for source_text in (
-            question,
-            lemma_text
+        if not canonical:
+            canonical = self.canonicalize_text(
+                lemma_text
+            )
+
+        # Kesir esdegerligi gibi sorular bazen sabit bir
+        # konu adini kullanmaz:
+        #
+        # "Bir bolu iki ile iki bolu dort ayni sayiyi mi
+        #  gosterir?"
+        #
+        # Iki veya daha fazla "bolu" ifadesi ve aynilik /
+        # esdegerlik sinyali varsa 2.01 kapsamindadir.
+        normalized_question = normalize_text(question)
+
+        fraction_relation = (
+            normalized_question.count(" bolu ") >= 2
+            and (
+                "ayni sayi" in normalized_question
+                or "esdeger" in normalized_question
+                or "denk kesir" in normalized_question
+                or "esit kesir" in normalized_question
+            )
+        )
+
+        if (
+            fraction_relation
+            and "rasyonel_sayilar" not in canonical
         ):
-            for item in self.canonicalize_text(
-                source_text
-            ):
-                if item not in canonical:
-                    canonical.append(item)
+            canonical.append(
+                "rasyonel_sayilar"
+            )
 
         route_keys = []
 

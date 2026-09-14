@@ -1,4 +1,4 @@
-﻿from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
 import json
 import time
@@ -31,7 +31,7 @@ from services.direct_knowledge_service import DirectKnowledgeService
 from services.direct_answer_composer import compose_direct_answer
 
 
-load_dotenv()
+load_dotenv(override=True)
 
 APP_VERSION = "0.1.0"
 DOCS_DIR = Path("data/documents")
@@ -379,41 +379,155 @@ def log_content_gap(
         return False
 
 def detect_subject(question: str) -> str | None:
-    normalized = question.casefold()
+    # Turkish-aware, ASCII-stable normalization.
+    # PowerShell/clipboard encoding differences must not affect routing.
+    normalized = question.casefold().replace(chr(775), "")
 
-    # Açık matematiksel gösterimler.
-    # "/" tek başına kullanılmaz; böylece URL'ler matematik olarak algılanmaz.
-    math_symbols = ("=", "+", "-", "*", "×", "÷", "≤", "≥", "<", ">", "√", "²", "³", "%")
+    normalized = normalized.translate(
+        str.maketrans({
+            ord(chr(231)): "c",   # c-cedilla
+            ord(chr(287)): "g",   # g-breve
+            ord(chr(305)): "i",   # dotless i
+            ord(chr(246)): "o",   # o-diaeresis
+            ord(chr(351)): "s",   # s-cedilla
+            ord(chr(252)): "u",   # u-diaeresis
+        })
+    )
+
+    # 1. Explicit mathematical symbols
+    math_symbols = (
+        "=", "+", "-", "*", "<", ">", "%",
+        chr(215),
+        chr(247),
+        chr(8804),
+        chr(8805),
+        chr(8730),
+        chr(178),
+        chr(179),
+    )
 
     if any(symbol in question for symbol in math_symbols):
         return "matematik"
 
-    # Kesir biçimi: 3/4, 12 / 5 gibi.
     if re.search(r"\b\d+\s*/\s*\d+\b", question):
         return "matematik"
 
-    matches = []
+    # 2. High-confidence curriculum expressions.
+    # Patterns are deliberately ASCII after normalization.
+    strong_patterns = {
+        "turkce": (
+            "gercek anlam",
+            "mecaz anlam",
+            "es anlam",
+            "zit anlam",
+            "yakin anlam",
+            "terim anlam",
+            "paragraf",
+            "sozcuk",
+            "kelime",
+            "baglam",
+            "ana dusunce",
+            "ana fikir",
+            "yardimci dusunce",
+            "cikarim",
+        ),
+        "matematik": (
+            "rasyonel sayi",
+            "rasyonel",
+            "dogal sayi",
+            "tam sayi",
+            "sayi kumeleri",
+            "rakam",
+            "basamak",
+            "bolu",
+        ),
+        "tarih": (
+            "orhun",
+            "gokturk",
+            "islamiyet oncesi turk",
+            "islamiyet oncesindeki devlet",
+            "ilk turk devlet",
+            "eski turk",
+            "kurultay",
+            "kut anlayisi",
+            "hukumdar",
+        ),
+        "cografya": (
+            "iklim",
+            "cografya",
+            "yer sekilleri",
+            "yeryuzu sekilleri",
+            "denizlerin iklime",
+            "karasal iklim",
+        ),
+    }
 
-    for subject, keywords in SUBJECT_KEYWORDS.items():
+    scores = {}
+
+    for subject, patterns in strong_patterns.items():
         score = sum(
-            1 for keyword in keywords
-            if keyword.casefold() in normalized
+            3 for pattern in patterns
+            if pattern in normalized
         )
+        if score:
+            scores[subject] = scores.get(subject, 0) + score
+
+    # Generic number concepts, but not every occurrence of "sayi".
+    if re.search(
+        r"\b("
+        r"sayi\s+nedir"
+        r"|sayi\s+ile"
+        r"|bir\s+sayi\b"
+        r"|sayilar\b"
+        r"|sayilarin\b"
+        r"|sayinin\b"
+        r")",
+        normalized,
+    ):
+        scores["matematik"] = scores.get("matematik", 0) + 3
+
+    # 3. Existing SUBJECT_KEYWORDS remain useful as secondary evidence.
+    for subject, keywords in SUBJECT_KEYWORDS.items():
+        score = 0
+
+        for keyword in keywords:
+            k = keyword.casefold().replace(chr(775), "")
+            k = k.translate(
+                str.maketrans({
+                    ord(chr(231)): "c",
+                    ord(chr(287)): "g",
+                    ord(chr(305)): "i",
+                    ord(chr(246)): "o",
+                    ord(chr(351)): "s",
+                    ord(chr(252)): "u",
+                })
+            )
+
+            # Too generic for mathematics.
+            if subject == "matematik" and k == "ifade":
+                continue
+
+            if k in normalized:
+                score += 1
 
         if score:
-            matches.append((score, subject))
+            scores[subject] = scores.get(subject, 0) + score
 
-    if not matches:
+    if not scores:
         return None
 
-    matches.sort(reverse=True)
+    ranked = sorted(
+        scores.items(),
+        key=lambda item: (-item[1], item[0])
+    )
 
-    best_score, best_subject = matches[0]
+    best_subject, best_score = ranked[0]
 
-    if len(matches) > 1 and matches[0][0] == matches[1][0]:
+    if len(ranked) > 1 and ranked[1][1] == best_score:
         return None
 
     return best_subject
+
 
 def _normalize_answerability_text(text: str) -> list[str]:
     text = text.casefold()
@@ -492,6 +606,43 @@ def has_required_answer_evidence(question: str, context: str) -> tuple[bool, str
     q_text = " ".join(q_words)
     c_text = " ".join(c_words)
 
+    # ORHUN TARGETED EVIDENCE GUARD
+    if "orhun" in q_text:
+
+        if "dili" in q_text:
+            language_markers = (
+                "gokturkce",
+                "kokturkce",
+                "eski turkce",
+                "orhun turkcesi",
+            )
+
+            if not any(
+                marker in c_text
+                for marker in language_markers
+            ):
+                return (
+                    False,
+                    "orhun_language_missing_explicit_evidence",
+                )
+
+        if "yansit" in q_text:
+            reflection_markers = (
+                "yansitir",
+                "yansitmistir",
+                "yansitan",
+                "yansitmakta",
+            )
+
+            if not any(
+                marker in c_text
+                for marker in reflection_markers
+            ):
+                return (
+                    False,
+                    "orhun_reflection_missing_explicit_evidence",
+                )
+
     # Görev / yetki / işlev soruları
     duty_intent = any(
         token in q_text
@@ -532,6 +683,146 @@ def has_required_answer_evidence(question: str, context: str) -> tuple[bool, str
             for pattern in duty_evidence_patterns
         ):
             return False, "DUTY_EVIDENCE_MISSING"
+
+    # --------------------------------------------------
+    # DEFINITION EVIDENCE GATE
+    # --------------------------------------------------
+    strong_definition_intent = (
+        "ne demektir" in q_text
+        or "ne anlama gelir" in q_text
+        or "anlami nedir" in q_text
+    )
+
+    semantic_nedir_intent = (
+        q_text.endswith(" nedir")
+        and any(
+            token in q_words
+            for token in (
+                "anlam",
+                "anlamli",
+                "sozcuk",
+                "dusunce",
+                "kavram",
+                "terim",
+            )
+        )
+    )
+
+    definition_intent = (
+        strong_definition_intent
+        or semantic_nedir_intent
+    )
+
+    if definition_intent:
+        definition_stop_words = {
+            "ne",
+            "nedir",
+            "demektir",
+            "anlama",
+            "gelir",
+            "anlami",
+            "paragrafta",
+            "paragraf",
+            "bir",
+            "bu",
+        }
+
+        concept_tokens = [
+            token
+            for token in q_words
+            if (
+                len(token) > 2
+                and token
+                not in definition_stop_words
+            )
+        ]
+
+        raw_sentences = re.split(
+            r"(?<=[.!?])\s+|\n+",
+            context,
+        )
+
+        definition_patterns = (
+            r"\bdenir\b",
+            r"\bifade\s+eder\b",
+            r"\banlamina\s+gelir\b",
+            r"\banlamindadir\b",
+            r"\bolarak\s+tanimlanir\b",
+            r"\btanimlanir\b",
+            r"\bkabul\s+edilir\b",
+        )
+
+        definition_found = False
+
+        for raw_sentence in raw_sentences:
+            sentence_words = (
+                _normalize_answerability_text(
+                    raw_sentence
+                )
+            )
+
+            if not sentence_words:
+                continue
+
+            sentence_text = " ".join(
+                sentence_words
+            )
+
+            def token_supported(token: str) -> bool:
+                if token in sentence_words:
+                    return True
+
+                if len(token) >= 5:
+                    prefix = token[:5]
+
+                    return any(
+                        len(candidate) >= 5
+                        and candidate.startswith(prefix)
+                        for candidate in sentence_words
+                    )
+
+                return False
+
+            concept_hits = sum(
+                1
+                for token in concept_tokens
+                if token_supported(token)
+            )
+
+            if not concept_tokens:
+                continue
+
+            required_hits = (
+                len(concept_tokens)
+                if len(concept_tokens) <= 3
+                else max(
+                    2,
+                    int(
+                        len(concept_tokens)
+                        * 0.75
+                    ),
+                )
+            )
+
+            if concept_hits < required_hits:
+                continue
+
+            if any(
+                re.search(
+                    pattern,
+                    sentence_text,
+                )
+                for pattern
+                in definition_patterns
+            ):
+                definition_found = True
+                break
+
+        if not definition_found:
+            return (
+                False,
+                "DEFINITION_EVIDENCE_MISSING",
+            )
 
     # Zaman soruları
     time_intent = any(

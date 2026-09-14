@@ -1,0 +1,502 @@
+[
+  {
+    "id": "BT-001",
+    "question": "Türkiye'nin iklim özellikleri nelerdir?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-002",
+    "question": "Orhun Yazıtlarının Türk tarihi açısından önemi nedir?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-003",
+    "question": "Rasyonel sayı nedir?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-004",
+    "question": "Bir sözcüğün gerçek anlamı ne demektir?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-005",
+    "question": "Lozan Barış Antlaşmasının önemi nedir?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-006",
+    "question": "2 çarpı x artı 3 eşittir 14 ise x kaçtır?",
+    "expected_route": "MATH"
+  },
+  {
+    "id": "BT-007",
+    "question": "Paragraf sorularını çözerken önce neye dikkat etmeliyim?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-008",
+    "question": "Orhun kitabelerini kim yazmıştır?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-009",
+    "question": "Rakam ile sayı arasındaki fark nedir?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-010",
+    "question": "Türkiye'de iklim çeşitliliğinin sebepleri nelerdir?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-011",
+    "question": "Kelimede anlam ne demektir?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-012",
+    "question": "Göktürkler neden Türk tarihi açısından önemlidir?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-013",
+    "question": "Rasyonel sayılara birkaç örnek verir misin?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-014",
+    "question": "Bir paragrafın ana düşüncesi nasıl bulunur?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-015",
+    "question": "Lozan Antlaşması Türkiye açısından neden önemlidir?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-016",
+    "question": "Mecaz anlam nedir?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-017",
+    "question": "3 bölü 4 bir rasyonel sayı mıdır?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-018",
+    "question": "Ülkemizin iklim özelliklerini kısaca anlat.",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-019",
+    "question": "Orhun Yazıtları hangi devlet dönemine aittir?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-020",
+    "question": "Paragrafta yardımcı düşünce ne demektir?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-021",
+    "question": "Sayı nedir?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-022",
+    "question": "Orhun Yazıtları neden önemli kabul edilir?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-023",
+    "question": "Gerçek anlam ile mecaz anlam arasındaki fark nedir?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-024",
+    "question": "Türkiye'nin farklı bölgelerinde neden farklı iklimler görülür?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-025",
+    "question": "Lozan Barış Antlaşması hangi açıdan dönüm noktasıdır?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-026",
+    "question": "Tam sayılar rasyonel sayı olarak yazılabilir mi?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-027",
+    "question": "Bir paragraf sorusunda soru kökünü nasıl değerlendirmeliyim?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-028",
+    "question": "Rakam nedir?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-029",
+    "question": "Sözcüğün cümlede kazandığı anlam nasıl belirlenir?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-030",
+    "question": "Göktürklerin Türk kültür tarihindeki yeri nedir?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-031",
+    "question": "Türkiye'de iklimi etkileyen temel faktörleri anlat.",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-032",
+    "question": "Orhun kitabeleri bize hangi konuda bilgi verir?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-033",
+    "question": "Sıfır bir rakam mıdır?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-034",
+    "question": "Rasyonel sayıların genel gösterimi nasıldır?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-035",
+    "question": "Paragrafta konu ile ana düşünce aynı şey midir?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-036",
+    "question": "Lozan'ın Türk bağımsızlığı açısından önemi nedir?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-037",
+    "question": "Bir kelimenin mecaz anlamda kullanıldığını nasıl anlarız?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-038",
+    "question": "Bir bölü iki ile iki bölü dört aynı sayıyı mı gösterir?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-039",
+    "question": "Türklerin İslamiyet öncesindeki devlet anlayışı nasıldı?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-040",
+    "question": "Türkiye'nin iklimini coğrafi konum nasıl etkiler?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-041",
+    "question": "Orhun Yazıtlarının dili nedir?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-042",
+    "question": "Paragrafın konusu nasıl bulunur?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-043",
+    "question": "Doğal sayı ile rakam arasında ne fark vardır?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-044",
+    "question": "Yakın anlamlı sözcük nedir?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-045",
+    "question": "Rasyonel sayılar sayı doğrusunda gösterilebilir mi?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-046",
+    "question": "Lozan Antlaşmasıyla ilgili temel sonucu açıklar mısın?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-047",
+    "question": "İlk Türk devletlerinde yönetim anlayışını anlat.",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-048",
+    "question": "Türkiye'de denizlerin iklime etkisi nedir?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-049",
+    "question": "Orhun Yazıtlarının içeriğinde neler anlatılır?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-050",
+    "question": "Paragraf sorularında seçenekleri değerlendirirken nelere dikkat etmeliyim?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-051",
+    "question": "Eş anlamlı kelime ne demektir?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-052",
+    "question": "Eksi üç bir rasyonel sayı mıdır?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-053",
+    "question": "Sayı kümeleri ne işe yarar?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-054",
+    "question": "Orhun Yazıtları Türk dili için neden önemlidir?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-055",
+    "question": "Türkiye'deki iklim çeşitliliğini anlat.",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-056",
+    "question": "Bir paragrafın ana fikri ile konusu arasındaki fark nedir?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-057",
+    "question": "Zıt anlamlı sözcük nedir?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-058",
+    "question": "Sıfır rasyonel sayı mıdır?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-059",
+    "question": "Lozan Barış Antlaşması hangi sürecin sonucunda imzalanmıştır?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-060",
+    "question": "İslamiyet öncesi Türklerde kut anlayışı nedir?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-061",
+    "question": "Türkiye'nin yer şekilleri iklimi nasıl etkiler?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-062",
+    "question": "Orhun kitabelerinde kimlere seslenilmektedir?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-063",
+    "question": "Bir kelimenin birden fazla anlam taşımasına ne denir?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-064",
+    "question": "5 bölü 1 rasyonel sayı mıdır?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-065",
+    "question": "Paragrafta anlatılmak istenen temel düşünce nasıl bulunur?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-066",
+    "question": "Rakamların sayısı kaç tanedir?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-067",
+    "question": "İlk Türk devletlerinde hükümdarın görevleri nelerdi?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-068",
+    "question": "Lozan'ın yeni Türk devleti açısından anlamı nedir?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-069",
+    "question": "Türkiye'nin iklim özelliklerini belirleyen unsurları say.",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-070",
+    "question": "Orhun Yazıtları hangi açıdan ilkler arasında değerlendirilir?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-071",
+    "question": "Terim anlam nedir?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-072",
+    "question": "Bir sayı hem tam sayı hem rasyonel sayı olabilir mi?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-073",
+    "question": "Paragraf sorularında metni mi yoksa soruyu mu önce okumak daha uygundur?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-074",
+    "question": "Sayı ile basamak kavramı arasındaki fark nedir?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-075",
+    "question": "İslamiyet öncesi Türk toplumunda devlet yapısı nasıldı?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-076",
+    "question": "Türkiye'nin kıyı kesimleriyle iç kesimleri arasında iklim neden farklıdır?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-077",
+    "question": "Orhun kitabeleri hangi tarihî şahsiyetlerle ilişkilidir?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-078",
+    "question": "Sözcüğün gerçek anlamına örnek verir misin?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-079",
+    "question": "Eksi bir bölü iki rasyonel sayı mıdır?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-080",
+    "question": "Lozan Barış Antlaşmasının siyasi önemini açıkla.",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-081",
+    "question": "Paragrafta başlık nasıl belirlenir?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-082",
+    "question": "Bir sayıyı oluşturan rakamlar ne ifade eder?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-083",
+    "question": "Eski Türklerde ülke yönetimi nasıl paylaşılırdı?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-084",
+    "question": "Türkiye'nin yükseltisi iklim üzerinde nasıl bir etki yapar?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-085",
+    "question": "Orhun Yazıtları günümüze hangi bilgileri taşır?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-086",
+    "question": "Mecaz anlamlı bir sözcüğe örnek verir misin?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-087",
+    "question": "İki rasyonel sayı arasında başka bir rasyonel sayı bulunabilir mi?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-088",
+    "question": "Paragrafta anlatımın yönünü değiştiren ifadeler neden önemlidir?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-089",
+    "question": "En küçük rakam hangisidir?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-090",
+    "question": "Lozan Antlaşmasının bağımsızlıkla ilişkisini anlat.",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-091",
+    "question": "İslamiyet öncesi Türklerde kurultay nedir?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-092",
+    "question": "Türkiye'de karasal iklimin genel özellikleri nelerdir?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-093",
+    "question": "Orhun Yazıtları Türklerin hangi özelliklerini yansıtır?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-094",
+    "question": "Sözcükte anlam sorularında bağlam neden önemlidir?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-095",
+    "question": "7 bölü 3 nasıl bir sayıdır?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-096",
+    "question": "Paragrafta çıkarım yapmak ne demektir?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-097",
+    "question": "En büyük rakam hangisidir?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-098",
+    "question": "Türkiye'nin iklim özelliklerini bir öğrenciye kısa ve basit biçimde anlat.",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-099",
+    "question": "Orhun Yazıtlarını çocuk gibi anlatır mısın?",
+    "expected_route": "KNOWLEDGE"
+  },
+  {
+    "id": "BT-100",
+    "question": "Rasyonel sayıları çok basit bir şekilde açıklar mısın?",
+    "expected_route": "KNOWLEDGE"
+  }
+]

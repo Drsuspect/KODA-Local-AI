@@ -228,7 +228,7 @@ def _replace_roman_numerals(text: str) -> str:
     # Nokta ile kullanilan Roma rakamlari:
     # I. / II. / III. gibi.
     text = re.sub(
-        r"(?<![A-Za-z????????????])"
+        r"(?<![A-Za-z" + C + G + I_DOTLESS + O + S + U + TR["C"] + TR["G"] + TR["I"] + TR["O"] + TR["S"] + TR["U"] + r"])"
         r"(VIII|VII|VI|IV|IX|III|II|I|V|X)"
         r"(?=\.)",
         repl_plain,
@@ -333,7 +333,7 @@ def to_accessible_speech(text: str) -> str:
     )
 
     result = re.sub(
-        r"(?m)^\s*[???]\s+",
+        r"(?m)^\s*[" + chr(8226) + chr(9679) + chr(9642) + r"]\s+",
         "",
         result,
     )

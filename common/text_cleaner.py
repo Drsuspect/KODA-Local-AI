@@ -41,6 +41,58 @@ def _remove_spurious_option_prefix(text: str, question: str = "") -> str:
     )
 
 
+
+def _strip_safe_markdown(text: str) -> str:
+    """
+    Remove presentation-only Markdown without touching
+    arithmetic multiplication such as: 2 * 3.
+    """
+
+    if not text:
+        return ""
+
+    # Markdown headings:
+    #   ## Baslik  -> Baslik
+    text = re.sub(
+        r"(?m)^\s{0,3}#{1,6}\s+",
+        "",
+        text,
+    )
+
+    # Markdown bullet:
+    #   * Madde -> Madde
+    text = re.sub(
+        r"(?m)^\s*\*\s+",
+        "",
+        text,
+    )
+
+    # Unicode bullets.
+    text = re.sub(
+        r"(?m)^\s*[???]\s+",
+        "",
+        text,
+    )
+
+    # Markdown bold:
+    #   **metin** -> metin
+    text = re.sub(
+        r"\*\*([^\n*]+?)\*\*",
+        r"\1",
+        text,
+    )
+
+    # Alternative Markdown bold:
+    #   __metin__ -> metin
+    text = re.sub(
+        r"__([^\n_]+?)__",
+        r"\1",
+        text,
+    )
+
+    return text
+
+
 def clean_llm_output(text: str, question: str = "") -> str:
     if not text:
         return ""
@@ -63,6 +115,10 @@ def clean_llm_output(text: str, question: str = "") -> str:
     text = re.sub(r"[ \t]{2,}", " ", text)
 
     text = text.strip()
+
+    # Presentation-only Markdown isaretlerini temizle.
+    # Matematikteki tek '*' carpma operatorune dokunulmaz.
+    text = _strip_safe_markdown(text)
 
     # Acik uclu sorulardaki sahte sik etiketini temizle.
     text = _remove_spurious_option_prefix(text, question)

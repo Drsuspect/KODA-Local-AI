@@ -524,6 +524,71 @@ def passage_intent_score(
         ):
             return 1.0
 
+    # TBMM DUTIES TARGETED EVIDENCE
+    #
+    # TBMM gorevleri sorusunda yaln?zca Meclis kelimesinin
+    # gecmesi yeterli degildir. Passage gorevleri acikca
+    # tanimlamali ve en az iki gercek gorev isareti tasimalidir.
+    if intent == "list":
+        asks_tbmm_duties = (
+            (
+                any(
+                    token.startswith("tbmm")
+                    for token in evidence_tokens
+                )
+                or (
+                    any(
+                        token.startswith("turkiye")
+                        for token in evidence_tokens
+                    )
+                    and any(
+                        token.startswith("millet")
+                        for token in evidence_tokens
+                    )
+                    and any(
+                        token.startswith("meclis")
+                        for token in evidence_tokens
+                    )
+                )
+                or any(
+                    token.startswith("meclis")
+                    for token in evidence_tokens
+                )
+            )
+            and any(
+                token.startswith("gorev")
+                for token in evidence_tokens
+            )
+        )
+
+        if asks_tbmm_duties:
+            tbmm_duty_markers = (
+                "kanun koy",
+                "kanun degistir",
+                "kanun kaldir",
+                "butce",
+                "kesin hesap",
+                "genel ve ozel af",
+            )
+
+            duty_hits = sum(
+                1
+                for duty_marker in tbmm_duty_markers
+                if duty_marker in normalized
+            )
+
+            if (
+                (
+                    "tbmm gorevleri" in normalized
+                    or "turkiye buyuk millet meclisi gorevleri"
+                    in normalized
+                )
+                and duty_hits >= 2
+            ):
+                return 1.0
+
+            return 0.0
+
     # MUNICIPAL DUTIES CONTENT-GAP GUARD
     #
     # "Belediyenin gorevleri nelerdir?" gibi bir list

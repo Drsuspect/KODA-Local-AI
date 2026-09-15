@@ -630,6 +630,38 @@ def compose_direct_answer(
     # --------------------------------------------------
     # LIST
     # --------------------------------------------------
+    # TARGETED TBMM DUTIES LIST
+    if (
+        intent == "list"
+        and (
+            "tbmm" in q
+            or "turkiye buyuk millet meclisi" in q
+            or (
+                "meclis" in q
+                and "gorev" in q
+            )
+        )
+        and "gorev" in q
+    ):
+        for sentence in sentences:
+            s = normalize_for_search(
+                sentence
+            )
+
+            if (
+                (
+                    "tbmm gorevleri" in s
+                    or
+                    "turkiye buyuk millet meclisi gorevleri"
+                    in s
+                )
+                and "kanun" in s
+                and "butce" in s
+            ):
+                return sentence
+
+        return ""
+
     # TARGETED CLIMATE LIST
     if (
         intent == "list"

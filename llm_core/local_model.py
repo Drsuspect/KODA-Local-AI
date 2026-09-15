@@ -123,7 +123,7 @@ class LocalLLM:
                 options={
                     "temperature": 0.2,
                     "top_p": 0.9,
-                    "num_predict": 64
+                    "num_predict": 128
                 },
                 cancel_event=cancel_event
             )

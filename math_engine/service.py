@@ -332,6 +332,7 @@ class MathService:
             "rakamlarin sayisi" in text
             or "rakam sayisi kac" in text
             or "kac rakam" in text
+            or "kac tane rakam" in text
         ):
             return MathServiceResult(
                 handled=True,
@@ -731,6 +732,31 @@ class MathService:
         left = left.strip()
         right = right.strip()
 
+        # Sesli / dogal dil denklem komutlarinda
+        # esitligin sag tarafindan sonra gelen
+        # soru-komut eklerini temizle.
+        #
+        # Ornek:
+        #   2 carpi parantez icinde x arti 3
+        #   esittir 14 denklemini coz
+        #
+        # -> 2*(x+3)=14
+        right = re.sub(
+            r"\s+"
+            r"(?:"
+            r"denklemini\s+(?:coz|\u00e7\u00f6z)"
+            r"|denklemi\s+(?:coz|\u00e7\u00f6z)"
+            r"|denklemini\s+(?:cozunuz|\u00e7\u00f6z\u00fcn\u00fcz)"
+            r"|denklemi\s+(?:cozunuz|\u00e7\u00f6z\u00fcn\u00fcz)"
+            r"|(?:coz|\u00e7\u00f6z)"
+            r"|(?:cozunuz|\u00e7\u00f6z\u00fcn\u00fcz)"
+            r")"
+            r"\s*$",
+            "",
+            right,
+            flags=re.IGNORECASE,
+        ).strip()
+
         if not left or not right:
             return None
 
@@ -856,14 +882,21 @@ class MathService:
         if not question:
             return question
 
-        pattern = re.compile(
-            r"\bparantez\s+i(?:\u00e7|c)inde\s+"
+        # --------------------------------------------------
+        # 1. "parantez x arti 3 parantez esittir ..."
+        #
+        # Sesli kullanimda ayni "parantez" sozcugu hem
+        # acilis hem kapanis icin kullanilabilir.
+        # --------------------------------------------------
+        paired_pattern = re.compile(
+            r"\bparantez\s+"
             r"(.+?)"
+            r"\s+parantez"
             r"(?=\s+(?:e\u015fittir|esittir|e\u015fit|esit)\b|\s*=)",
             flags=re.IGNORECASE,
         )
 
-        return pattern.sub(
+        normalized = paired_pattern.sub(
             lambda match: (
                 "("
                 + match.group(1).strip()
@@ -871,6 +904,27 @@ class MathService:
             ),
             question,
         )
+
+        # --------------------------------------------------
+        # 2. "parantez icinde x arti 3 esittir ..."
+        # --------------------------------------------------
+        inside_pattern = re.compile(
+            r"\bparantez\s+i(?:\u00e7|c)inde\s+"
+            r"(.+?)"
+            r"(?=\s+(?:e\u015fittir|esittir|e\u015fit|esit)\b|\s*=)",
+            flags=re.IGNORECASE,
+        )
+
+        normalized = inside_pattern.sub(
+            lambda match: (
+                "("
+                + match.group(1).strip()
+                + ")"
+            ),
+            normalized,
+        )
+
+        return normalized
 
     def handle(self, question: str) -> MathServiceResult:
         # 0. DIGIT FACTS

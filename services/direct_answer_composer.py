@@ -71,6 +71,25 @@ def compose_direct_answer(
         q = q + " kok turk"
 
     # --------------------------------------------------
+    # TARGETED FACT - KAPITULASYON / LOZAN
+    # --------------------------------------------------
+    if (
+        "kapitulasyon" in q
+        and "kaldir" in q
+    ):
+        for sentence in sentences:
+            s = normalize_for_search(sentence)
+
+            if (
+                "lozan" in s
+                and "kapitulasyon" in s
+                and "kaldir" in s
+            ):
+                return sentence
+
+        return ""
+
+    # --------------------------------------------------
     # DEFINITION
     # --------------------------------------------------
     if intent == "definition":
@@ -477,6 +496,30 @@ def compose_direct_answer(
     # --------------------------------------------------
     # REASON
     # --------------------------------------------------
+    # TARGETED DENIZELLIK / IKLIM REASON ANSWER
+    if (
+        intent == "reason"
+        and (
+            "denizellik" in q
+            or "denizel" in q
+            or (
+                "deniz" in q
+                and "iklim" in q
+            )
+        )
+    ):
+        for sentence in sentences:
+            s = normalize_for_search(sentence)
+
+            if (
+                "deniz" in s
+                and "sicaklik" in s
+                and "azaltir" in s
+            ):
+                return sentence
+
+        return ""
+
     if intent == "reason":
         markers = (
             " cunku",

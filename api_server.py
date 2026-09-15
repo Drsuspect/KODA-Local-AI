@@ -684,6 +684,122 @@ def has_required_answer_evidence(question: str, context: str) -> tuple[bool, str
         ):
             return False, "DUTY_EVIDENCE_MISSING"
 
+        # --------------------------------------------------
+        # DUTY SUBJECT LINK GUARD
+        #
+        # "X'in gorevleri nelerdir?" sorusunda baglam,
+        # gorev/yetki bilgisini ayni ana ozneye baglamali.
+        #
+        # Ornek:
+        #   "Belediye encumeninin gorevleri..." ifadesi
+        #   "Belediyenin gorevleri..." sorusuna tek basina
+        #   yeterli evidence sayilmaz.
+        # --------------------------------------------------
+        duty_stop_words = {
+            "gorev",
+            "gorevleri",
+            "yetki",
+            "yetkileri",
+            "islev",
+            "islevi",
+            "nelerdir",
+            "nedir",
+            "ne",
+            "ise",
+            "yarar",
+        }
+
+        subject_tokens = [
+            token
+            for token in q_words
+            if (
+                len(token) > 2
+                and token not in duty_stop_words
+            )
+        ]
+
+        if subject_tokens:
+            subject_linked = False
+
+            raw_sentences = re.split(
+                r"(?<=[.!?])\s+|\n+",
+                context,
+            )
+
+            for raw_sentence in raw_sentences:
+                sentence_words = (
+                    _normalize_answerability_text(
+                        raw_sentence
+                    )
+                )
+
+                if not sentence_words:
+                    continue
+
+                sentence_text = " ".join(
+                    sentence_words
+                )
+
+                has_duty_marker = any(
+                    re.search(
+                        pattern,
+                        sentence_text,
+                    )
+                    for pattern in duty_evidence_patterns
+                )
+
+                if not has_duty_marker:
+                    continue
+
+                subject_hit = any(
+                    (
+                        token in sentence_words
+                        or (
+                            len(token) >= 5
+                            and any(
+                                word.startswith(token[:5])
+                                for word in sentence_words
+                            )
+                        )
+                    )
+                    for token in subject_tokens
+                )
+
+                if not subject_hit:
+                    continue
+
+                if any(
+                    marker in sentence_text
+                    for marker in (
+                        "belediye encumeni",
+                        "belediye meclisi",
+                        "belediye baskani",
+                    )
+                ):
+                    continue
+
+                # Bir kurumun organini tanimlayan cumle,
+                # kurumun kendi gorevlerini aciklayan evidence
+                # olarak kullanilamaz.
+                #
+                # Ornek:
+                #   "Belediyenin danisma ve yurutme gorevleri
+                #    bulunan organidir."
+                #
+                # Bu, belediyenin gorevlerini degil bir belediye
+                # organinin niteligini anlatir.
+                if (
+                    "organidir" in sentence_text
+                    or "organdir" in sentence_text
+                ):
+                    continue
+
+                subject_linked = True
+                break
+
+            if not subject_linked:
+                return False, "DUTY_SUBJECT_EVIDENCE_MISSING"
+
     # --------------------------------------------------
     # DEFINITION EVIDENCE GATE
     # --------------------------------------------------

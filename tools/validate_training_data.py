@@ -11,6 +11,18 @@ REQUIRED_REASONING = {
 }
 OPTION_KEYS = {"A", "B", "C", "D", "E"}
 
+REQUIRED_ACCESSIBILITY = {
+    "id", "content_type", "source_text", "accessible_text",
+    "tts_text", "standards", "validation",
+}
+
+REQUIRED_VOICE = {
+    "id", "canonical_text", "intent", "category",
+    "audio_ref", "conditions", "split",
+}
+
+VALID_SPLITS = {None, "train", "dev", "benchmark"}
+
 
 def validate_reasoning(row: dict) -> list[str]:
     errors: list[str] = []
@@ -44,17 +56,75 @@ def validate_reasoning(row: dict) -> list[str]:
         for required in ("text", "is_correct", "reason"):
             if required not in value:
                 errors.append(f"option {key} missing {required}")
+        if isinstance(value, dict) and not str(value.get("reason") or "").strip():
+            errors.append(f"option {key} reason must not be empty")
 
     pedagogy = row.get("pedagogy") or {}
     for required in ("hint", "explain", "check_understanding"):
         if not str(pedagogy.get(required) or "").strip():
             errors.append(f"pedagogy missing/empty {required}")
 
-    split = row.get("split")
-    if split not in (None, "train", "dev", "benchmark"):
+    if row.get("split") not in VALID_SPLITS:
         errors.append("split must be train/dev/benchmark")
 
     return errors
+
+
+def validate_accessibility(row: dict) -> list[str]:
+    errors: list[str] = []
+    missing = REQUIRED_ACCESSIBILITY - set(row)
+    if missing:
+        errors.append(f"missing fields: {sorted(missing)}")
+        return errors
+
+    for field in ("source_text", "accessible_text", "tts_text"):
+        if not str(row.get(field) or "").strip():
+            errors.append(f"{field} must not be empty")
+
+    standards = row.get("standards")
+    if not isinstance(standards, list) or not standards:
+        errors.append("standards must be a non-empty list")
+
+    validation = row.get("validation") or {}
+    if validation.get("status") not in {"draft", "reviewed", "verified"}:
+        errors.append("validation.status must be draft/reviewed/verified")
+
+    if row.get("split") not in VALID_SPLITS:
+        errors.append("split must be train/dev/benchmark")
+
+    return errors
+
+
+def validate_voice(row: dict) -> list[str]:
+    errors: list[str] = []
+    missing = REQUIRED_VOICE - set(row)
+    if missing:
+        errors.append(f"missing fields: {sorted(missing)}")
+        return errors
+
+    for field in ("canonical_text", "intent", "category", "audio_ref"):
+        if not str(row.get(field) or "").strip():
+            errors.append(f"{field} must not be empty")
+
+    conditions = row.get("conditions")
+    if not isinstance(conditions, dict):
+        errors.append("conditions must be an object")
+    else:
+        noise = conditions.get("noise")
+        if noise not in {"clean", "low", "medium", "high", "unknown"}:
+            errors.append("conditions.noise invalid")
+
+    if row.get("split") not in {"train", "dev", "benchmark"}:
+        errors.append("split must be train/dev/benchmark")
+
+    return errors
+
+
+VALIDATORS = {
+    "reasoning": validate_reasoning,
+    "accessibility": validate_accessibility,
+    "voice": validate_voice,
+}
 
 
 def main() -> int:
@@ -62,20 +132,23 @@ def main() -> int:
     parser.add_argument("file")
     parser.add_argument(
         "--type",
-        choices=["reasoning"],
+        choices=sorted(VALIDATORS),
         default="reasoning",
     )
     args = parser.parse_args()
 
     path = Path(args.file)
+    validator = VALIDATORS[args.type]
     failures = 0
     rows = 0
+    ids: set[str] = set()
 
     for lineno, raw in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
         raw = raw.strip()
         if not raw:
             continue
         rows += 1
+
         try:
             row = json.loads(raw)
         except json.JSONDecodeError as exc:
@@ -83,12 +156,24 @@ def main() -> int:
             print(f"{lineno}: invalid JSON: {exc}")
             continue
 
-        errors = validate_reasoning(row)
+        row_id = str(row.get("id") or "").strip()
+        errors = validator(row)
+
+        if not row_id:
+            errors.append("id must not be empty")
+        elif row_id in ids:
+            errors.append(f"duplicate id: {row_id}")
+        else:
+            ids.add(row_id)
+
         if errors:
             failures += 1
             print(f"{lineno}: " + "; ".join(errors))
 
-    print(f"rows={rows} failures={failures}")
+    print(
+        f"type={args.type} rows={rows} unique_ids={len(ids)} "
+        f"failures={failures}"
+    )
     return 1 if failures else 0
 
 

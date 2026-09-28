@@ -1,0 +1,32 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "title":"KODAAI Accessibility Transformation Record v0.1",
+  "type":"object",
+  "required":["id","content_type","source_text","accessible_text","tts_text","standards","validation"],
+  "properties":{
+    "id":{"type":"string"},
+    "content_type":{"type":"string"},
+    "source_text":{"type":"string"},
+    "accessible_text":{"type":"string"},
+    "tts_text":{"type":"string"},
+    "standards":{
+      "type":"array",
+      "items":{"type":"string"},
+      "minItems":1
+    },
+    "rules_applied":{
+      "type":"array",
+      "items":{"type":"string"}
+    },
+    "validation":{
+      "type":"object",
+      "required":["status"],
+      "properties":{
+        "status":{"enum":["draft","reviewed","verified"]},
+        "notes":{"type":["string","null"]}
+      }
+    },
+    "split":{"enum":["train","dev","benchmark"]}
+  },
+  "additionalProperties":false
+}

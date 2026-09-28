@@ -1,0 +1,26 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "title":"KODAAI Voice Command Manifest v0.1",
+  "type":"object",
+  "required":["id","canonical_text","intent","category","audio_ref","conditions","split"],
+  "properties":{
+    "id":{"type":"string"},
+    "canonical_text":{"type":"string"},
+    "intent":{"type":"string"},
+    "category":{"type":"string"},
+    "audio_ref":{"type":"string"},
+    "conditions":{
+      "type":"object",
+      "properties":{
+        "device":{"type":["string","null"]},
+        "noise":{"enum":["clean","low","medium","high","unknown"]},
+        "speaker_group":{"type":["string","null"]},
+        "notes":{"type":["string","null"]}
+      }
+    },
+    "expected_normalized_text":{"type":["string","null"]},
+    "critical":{"type":"boolean"},
+    "split":{"enum":["train","dev","benchmark"]}
+  },
+  "additionalProperties":false
+}

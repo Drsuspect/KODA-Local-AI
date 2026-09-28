@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "KODAAI Educational Reasoning Record v0.1",
+  "type": "object",
+  "required": ["id","subject","question","options","correct_answer","pedagogy","source","validation"],
+  "properties": {
+    "id": {"type":"string"},
+    "subject": {"type":"string"},
+    "topic": {"type":["string","null"]},
+    "question": {"type":"string"},
+    "options": {
+      "type":"object",
+      "required":["A","B","C","D","E"],
+      "properties": {
+        "A":{"$ref":"#/$defs/option"},
+        "B":{"$ref":"#/$defs/option"},
+        "C":{"$ref":"#/$defs/option"},
+        "D":{"$ref":"#/$defs/option"},
+        "E":{"$ref":"#/$defs/option"}
+      },
+      "additionalProperties": false
+    },
+    "correct_answer":{"enum":["A","B","C","D","E"]},
+    "pedagogy": {
+      "type":"object",
+      "required":["hint","explain","check_understanding"],
+      "properties":{
+        "hint":{"type":"string"},
+        "explain":{"type":"string"},
+        "simplify":{"type":["string","null"]},
+        "example":{"type":["string","null"]},
+        "check_understanding":{"type":"string"}
+      }
+    },
+    "source": {
+      "type":"object",
+      "required":["type","reference"],
+      "properties":{
+        "type":{"type":"string"},
+        "reference":{"type":"string"},
+        "license":{"type":["string","null"]}
+      }
+    },
+    "validation": {
+      "type":"object",
+      "required":["status"],
+      "properties":{
+        "status":{"enum":["draft","reviewed","verified"]},
+        "reviewer":{"type":["string","null"]},
+        "notes":{"type":["string","null"]}
+      }
+    },
+    "split":{"enum":["train","dev","benchmark"]}
+  },
+  "$defs":{
+    "option":{
+      "type":"object",
+      "required":["text","is_correct","reason"],
+      "properties":{
+        "text":{"type":"string"},
+        "is_correct":{"type":"boolean"},
+        "reason":{"type":"string"}
+      }
+    }
+  },
+  "additionalProperties": false
+}

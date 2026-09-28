@@ -1,0 +1,43 @@
+{
+  "benchmark_family": "KODAAI Benchmark Framework",
+  "version": "1.0",
+  "policy": {
+    "training_data_separation": true,
+    "prompt_example_separation": true,
+    "rag_corpus_separation": true,
+    "personal_data_allowed": false
+  },
+  "suites": [
+    {
+      "name": "local_ai_v1",
+      "status": "smoke",
+      "purpose": "route/refusal/latency regression detection",
+      "runner": "benchmarks/local_ai_v1/run_benchmark.py",
+      "cases": "benchmarks/local_ai_v1/questions.jsonl"
+    },
+    {
+      "name": "turkish_voice_v1",
+      "status": "planned",
+      "purpose": "KODAAI command recognition benchmark",
+      "metrics": [
+        "command_success_rate",
+        "WER",
+        "CER",
+        "EMPTY_STT_rate",
+        "latency_ms",
+        "critical_command_accuracy"
+      ]
+    },
+    {
+      "name": "accessibility_v1",
+      "status": "planned",
+      "purpose": "Reading/MathSpeak/TTS production rule compliance",
+      "metrics": [
+        "rule_compliance",
+        "meaning_preservation",
+        "answer_leakage",
+        "speech_clarity"
+      ]
+    }
+  ]
+}

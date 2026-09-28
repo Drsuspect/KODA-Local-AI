@@ -1,0 +1,33 @@
+{
+  "name": "KODAAI Educational Reasoning Corpus",
+  "version": "0.1-seed",
+  "branch": "feature/training-data-benchmark-v1",
+  "record_count": 20,
+  "status": "reviewed_pending_human_verification",
+  "split": {
+    "train": 20,
+    "dev": 0,
+    "benchmark": 0
+  },
+  "subject_distribution": {
+    "Türkçe": 3,
+    "Tarih": 3,
+    "Coğrafya": 3,
+    "Vatandaşlık": 3,
+    "Matematik": 4,
+    "Genel Yetenek": 2,
+    "Genel Kültür": 2
+  },
+  "source_policy": "project-generated synthetic only in public seed",
+  "next_target": {
+    "record_count": 100,
+    "requirements": [
+      "human/domain verification before validation.status=verified",
+      "no benchmark leakage",
+      "source/license field required",
+      "wrong-option reasoning for A-E",
+      "hint + explain + check_understanding required",
+      "accessibility review before production use"
+    ]
+  }
+}

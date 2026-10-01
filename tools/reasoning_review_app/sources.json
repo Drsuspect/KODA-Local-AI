@@ -1,0 +1,11 @@
+{
+  "policy": "official-first; web evidence is reference-only; no automatic corpus ingestion",
+  "sources": [
+    {"id":"TDK_YAZIM_2026","url":"https://yazim.tdk.gov.tr/","authority":"TDK","use":"Yazım ve normatif dil kuralları"},
+    {"id":"TDK_SESLER","url":"https://yazim.tdk.gov.tr/content/02-sesler-ve-ses-uyumlari.html","authority":"TDK","use":"Sesler, ses uyumları, ünsüz uyumu"},
+    {"id":"TDK_UNLU_DUSMESI","url":"https://tdk.gov.tr/icerik/yazim-kurallari/unlu-dusmesi/","authority":"TDK","use":"Ünlü düşmesi"},
+    {"id":"MEB_EKPSS_SES","url":"https://orgm.meb.gov.tr/ekpsssmebozel/content/magazines/pdf/turkce2.pdf","authority":"MEB","use":"EKPSS Türkçe ses bilgisi öğretim çerçevesi"},
+    {"id":"MEB_GORME_DILBILGISI","url":"https://orgm.meb.gov.tr/meb_iys_dosyalar/2025_03/13111054_21130034_gorme.pdf","authority":"MEB","use":"Görme engelli bireylerde dil bilgisi hedef ve öğretim yaklaşımı"},
+    {"id":"ZEMBEREK","url":"https://github.com/ahmetaa/zemberek-nlp","authority":"community/open-source","use":"Yardımcı biçimbilim, çözümleme, yazım denetimi; normatif otorite değildir"}
+  ]
+}

@@ -37,7 +37,7 @@ OFFICIAL_SOURCES = {
     },
     "MEB_EKPSS_SES": {
         "label": "MEB Özel Eğitim - EKPSS Türkçe / Ses Bilgisi",
-        "url": "https://orgm.meb.gov.tr/ekpsssmebozel/content/magazines/pdf/turkce2.pdf",
+        "url": "https://orgm.meb.gov.tr/ekpssmebozel/content/magazines/pdf/turkce2.pdf",
         "authority": "official",
     },
     "MEB_GORME_DILBILGISI": {
